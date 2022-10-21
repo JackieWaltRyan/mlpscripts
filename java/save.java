@@ -1,5 +1,3 @@
-package com;
-
 import android.content.Context;
 import android.content.res.AssetManager;
 import java.io.BufferedInputStream;

@@ -1,5 +1,3 @@
-package com.jwr;
-
 import android.content.Context;
 import java.io.File;
 import java.io.FileInputStream;
