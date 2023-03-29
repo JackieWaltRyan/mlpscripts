@@ -1,354 +1,81 @@
 from os import listdir, makedirs
-from os.path import exists, join
-from re import findall, sub
-
+from os.path import exists, join, isfile
+from re import findall, sub, MULTILINE
 
 if __name__ == "__main__":
-    path, i = "bin/", 1
-    if exists(path):
-        if len(listdir(path)) != 0:
-            for bin_file in listdir(path):
-                print(f"Ищем данные в: {bin_file}")
-                found_data = ""
-                with open(join(path, bin_file), "rb") as opened_file:
-                    trigger = None
-                    for raw_data in opened_file.readlines():
-                        if findall("<MLP_Save", str(raw_data)):
-                            trigger = "save"
-                        if trigger is not None:
-                            found_data += str(raw_data)
-                        if findall("MLP_Save>", str(raw_data)):
-                            trigger = None
-                found_data = sub(r"MLP_Save>.*$", r"MLP_Save>", sub(r"^.*<MLP_Save", r"<MLP_Save", found_data))
-                found_data = sub(r"\\x00", r"", found_data)
-                found_data = sub(r"/>", r'"/>', found_data)
-                found_data = sub(r" ", r'" ', found_data)
-                found_data = sub(r"\"([^ \"/]+)>", r'"\1">', found_data)
-                found_data = sub(r"(\"[^ \"/]+\")", r"=\1", found_data)
-                found_data = sub(r"<MLP_Save<", r"<MLP_Save><", found_data)
-                found_data = sub(r"(<\w+)<", r"\1><", found_data)
-                found_data = sub(r"(<\w+)<", r"\1><", found_data)
-                found_data = sub(r"\"\"", r'=""', found_data)
-                found_data = sub(r"=\">", r'="">', found_data)
-                found_data = sub(r"\" \[TOTAL]\" ", r" [TOTAL] ", found_data)
-                found_data = sub(r"<(\S+)TS_0", r"<\1 TS_0", found_data)
-                found_data = sub(r"<(\S+)state", r"<\1 state", found_data)
-                found_data = sub(r"<(\S+)type", r"<\1 type", found_data)
-                found_data = sub(r"<AIState", r"<AIState ", found_data)
-                found_data = sub(r"<ActionTickets", r"<ActionTickets ", found_data)
-                found_data = sub(r"<Activated", r"<Activated ", found_data)
-                found_data = sub(r"<ActiveChallengeList", r"<ActiveChallengeList ", found_data)
-                found_data = sub(r"<ActiveEnergyTournamentList", r"<ActiveEnergyTournamentList ", found_data)
-                found_data = sub(r"<ActiveInvisibleQuestList", r"<ActiveInvisibleQuestList ", found_data)
-                found_data = sub(r"<ActivePhases", r"<ActivePhases ", found_data)
-                found_data = sub(r"<ActiveQuestList", r"<ActiveQuestList ", found_data)
-                found_data = sub(r"<ActiveStoryEvent", r"<ActiveStoryEvent ", found_data)
-                found_data = sub(r"<ActiveSubscriptionRewardEvent", r"<ActiveSubscriptionRewardEvent ", found_data)
-                found_data = sub(r"<ActiveTournamentList", r"<ActiveTournamentList ", found_data)
-                found_data = sub(r"<ActiveTravelPonyEventList", r"<ActiveTravelPonyEventList ", found_data)
-                found_data = sub(r"<ActivitiesNotification", r"<ActivitiesNotification ", found_data)
-                found_data = sub(r"<AdsRewardEvents", r"<AdsRewardEvents ", found_data)
-                found_data = sub(r"<AdsRewardPonyData", r"<AdsRewardPonyData ", found_data)
-                found_data = sub(r"<AirShip_Objects", r"<AirShip_Objects ", found_data)
-                found_data = sub(r"<AltPointcuts", r"<AltPointcuts ", found_data)
-                found_data = sub(r"<AltPrize2", r"<AltPrize2 ", found_data)
-                found_data = sub(r"<AlternateIcon", r"<AlternateIcon ", found_data)
-                found_data = sub(r"<AlternateMesh", r"<AlternateMesh ", found_data)
-                found_data = sub(r"<Alternative", r"<Alternative ", found_data)
-                found_data = sub(r"<Arena", r"<Arena ", found_data)
-                found_data = sub(r"<Arrive", r"<Arrive ", found_data)
-                found_data = sub(r"<BattlePass", r"<BattlePass ", found_data)
-                found_data = sub(r"<Birthday", r"<Birthday ", found_data)
-                found_data = sub(r"<BluePrintTransactionRecord", r"<BluePrintTransactionRecord ", found_data)
-                found_data = sub(r"<BluePrints", r"<BluePrints ", found_data)
-                found_data = sub(r"<BodyParts", r"<BodyParts ", found_data)
-                found_data = sub(r"<BoughtedList", r"<BoughtedList ", found_data)
-                found_data = sub(r"<CK_Boss", r"<CK_Boss ", found_data)
-                found_data = sub(r"<COPPA", r"<COPPA ", found_data)
-                found_data = sub(r"<CRL_BLITZ_TLS_Tapable_Container", r"<CRL_BLITZ_TLS_Tapable_Container ", found_data)
-                found_data = sub(r"<CRMGifts", r"<CRMGifts ", found_data)
-                found_data = sub(r"<Challenge", r"<Challenge ", found_data)
-                found_data = sub(r"<Changeling_Objects", r"<Changeling_Objects ", found_data)
-                found_data = sub(r"<Changeling_Queen_Objects", r"<Changeling_Queen_Objects ", found_data)
-                found_data = sub(r"<CinematicData", r"<CinematicData ", found_data)
-                found_data = sub(r"<CinematicsViewed", r"<CinematicsViewed ", found_data)
-                found_data = sub(r"<ClaimedRewards", r"<ClaimedRewards ", found_data)
-                found_data = sub(r"<Clearable_Objects", r"<Clearable_Objects ", found_data)
-                found_data = sub(r"<Clicker", r"<Clicker ", found_data)
-                found_data = sub(r"<CollectionData", r"<CollectionData ", found_data)
-                found_data = sub(r"<CollectionEventList", r"<CollectionEventList ", found_data)
-                found_data = sub(r"<CollectionFixedData", r"<CollectionFixedData ", found_data)
-                found_data = sub(r"<CollectionItem", r"<CollectionItem ", found_data)
-                found_data = sub(r"<CollectionItemReward", r"<CollectionItemReward ", found_data)
-                found_data = sub(r"<CollectionNotificationQueue", r"<CollectionNotificationQueue ", found_data)
-                found_data = sub(r"<CollectionProgresData", r"<CollectionProgresData ", found_data)
-                found_data = sub(r"<CollectionReward", r"<CollectionReward ", found_data)
-                found_data = sub(r"<CollectionWithoutChanges", r"<CollectionWithoutChanges ", found_data)
-                found_data = sub(r"<CompletedCollectionItemList", r"<CompletedCollectionItemList ", found_data)
-                found_data = sub(r"<CompletedCollectionList", r"<CompletedCollectionList ", found_data)
-                found_data = sub(r"<CompletedQuestCategories", r"<CompletedQuestCategories ", found_data)
-                found_data = sub(r"<CompletedQuestList", r"<CompletedQuestList ", found_data)
-                found_data = sub(r"<Consumable_Objects", r"<Consumable_Objects ", found_data)
-                found_data = sub(r"<Container_Objects", r"<Container_Objects ", found_data)
-                found_data = sub(r"<Conversion", r"<Conversion ", found_data)
-                found_data = sub(r"<Cost", r"<Cost ", found_data)
-                found_data = sub(r"<Cragadile_Objects", r"<Cragadile_Objects ", found_data)
-                found_data = sub(r"<DailyBonus", r"<DailyBonus ", found_data)
-                found_data = sub(r"<DataTable", r"<DataTable ", found_data)
-                found_data = sub(r"<Date_Of_Birth", r"<Date_Of_Birth ", found_data)
-                found_data = sub(r"<DayRewardList", r"<DayRewardList ", found_data)
-                found_data = sub(r"<Decore_Objects", r"<Decore_Objects ", found_data)
-                found_data = sub(r"<DelayedPointcuts", r"<DelayedPointcuts ", found_data)
-                found_data = sub(r"<DestroyedHouse_Objects", r"<DestroyedHouse_Objects ", found_data)
-                found_data = sub(r"<EG", r"<EG ", found_data)
-                found_data = sub(r"<ESP_Objects", r"<ESP_Objects ", found_data)
-                found_data = sub(r"<EndedQuestCategories", r"<EndedQuestCategories ", found_data)
-                found_data = sub(r"<EndedQuestCategory", r"<EndedQuestCategory ", found_data)
-                found_data = sub(r"<EntranceLocks", r"<EntranceLocks ", found_data)
-                found_data = sub(r"<Equestria_Girl", r"<Equestria_Girl ", found_data)
-                found_data = sub(r"<EventPrizeManager", r"<EventPrizeManager ", found_data)
-                found_data = sub(r"<ExpansionForPrice", r"<ExpansionForPrice ", found_data)
-                found_data = sub(r"<ExpansionZones", r"<ExpansionZones ", found_data)
-                found_data = sub(r"<Expansion_C_Objects", r"<Expansion_C_Objects ", found_data)
-                found_data = sub(r"<Expansion_CanterlotForPrice", r"<Expansion_CanterlotForPrice ", found_data)
-                found_data = sub(r"<Expansion_Crystal_EmpireForPrice", r"<Expansion_Crystal_EmpireForPrice ",
-                                 found_data)
-                found_data = sub(r"<Expansion_Everfree_ForestForPrice", r"<Expansion_Everfree_ForestForPrice ",
-                                 found_data)
-                found_data = sub(r"<Expansion_KlugetownForPrice", r"<Expansion_KlugetownForPrice ", found_data)
-                found_data = sub(r"<Expansion_Objects", r"<Expansion_Objects ", found_data)
-                found_data = sub(r"<Expansion_Sweet_Apple_AcresForPrice", r"<Expansion_Sweet_Apple_AcresForPrice ",
-                                 found_data)
-                found_data = sub(r"<FKB_TLS_Spikes_Egg", r"<FKB_TLS_Spikes_Egg ", found_data)
-                found_data = sub(r"<FashionEventList", r"<FashionEventList ", found_data)
-                found_data = sub(r"<FashionNotification", r"<FashionNotification ", found_data)
-                found_data = sub(r"<FindPairNode", r"<FindPairNode ", found_data)
-                found_data = sub(r"<Focuses", r"<Focuses ", found_data)
-                found_data = sub(r"<Footer", r"<Footer ", found_data)
-                found_data = sub(r"<FreePonyFromCrystal", r"<FreePonyFromCrystal ", found_data)
-                found_data = sub(r"<Friendship_Chest_Objects", r"<Friendship_Chest_Objects ", found_data)
-                found_data = sub(r"<Fusion", r"<Fusion ", found_data)
-                found_data = sub(r"<GQ_0_Tutorial", r"<GQ_0_Tutorial ", found_data)
-                found_data = sub(r"<GQ_11_Seasonal", r"<GQ_11_Seasonal ", found_data)
-                found_data = sub(r"<GQ_1_The_Las_Pegasus_Job", r"<GQ_1_The_Las_Pegasus_Job ", found_data)
-                found_data = sub(r"<GQ_2_In_the_Yak_of_It", r"<GQ_2_In_the_Yak_of_It ", found_data)
-                found_data = sub(r"<GQ_3_Cold_Front", r"<GQ_3_Cold_Front ", found_data)
-                found_data = sub(r"<GQ_4_Guys_Night", r"<GQ_4_Guys_Night ", found_data)
-                found_data = sub(r"<GQ_5_Doctor_Shy", r"<GQ_5_Doctor_Shy ", found_data)
-                found_data = sub(r"<GQ_6_Trot_Secret", r"<GQ_6_Trot_Secret ", found_data)
-                found_data = sub(r"<GQ_7_Princess_Panic", r"<GQ_7_Princess_Panic ", found_data)
-                found_data = sub(r"<GameObjects", r"<GameObjects ", found_data)
-                found_data = sub(r"<GameVersion", r"<GameVersion ", found_data)
-                found_data = sub(r"<GiftOfFriendship", r"<GiftOfFriendship ", found_data)
-                found_data = sub(r"<Gift_Of_Friendship_Objects", r"<Gift_Of_Friendship_Objects ", found_data)
-                found_data = sub(r"<Gifts_Of_Friendship", r"<Gifts_Of_Friendship ", found_data)
-                found_data = sub(r"<GlobalCategoryList", r"<GlobalCategoryList ", found_data)
-                found_data = sub(r"<GlobalDataTable", r"<GlobalDataTable ", found_data)
-                found_data = sub(r"<GlobalTotems", r"<GlobalTotems ", found_data)
-                found_data = sub(r"<Goals", r"<Goals ", found_data)
-                found_data = sub(r"<GroupQuestManager", r"<GroupQuestManager ", found_data)
-                found_data = sub(r"<GuaranteedPrize", r"<GuaranteedPrize ", found_data)
-                found_data = sub(r"<HH_TLS_Balloons", r"<HH_TLS_Balloons ", found_data)
-                found_data = sub(r"<Header", r"<Header ", found_data)
-                found_data = sub(r"<Health", r"<Health ", found_data)
-                found_data = sub(r"<HelpFlags", r"<HelpFlags ", found_data)
-                found_data = sub(r"<Hidden_Pony_Gifts", r"<Hidden_Pony_Gifts ", found_data)
-                found_data = sub(r"<Home", r"<Home ", found_data)
-                found_data = sub(r"<IngredientPatch_Objects", r"<IngredientPatch_Objects ", found_data)
-                found_data = sub(r"<IngredientReady", r"<IngredientReady ", found_data)
-                found_data = sub(r"<Ingredients", r"<Ingredients ", found_data)
-                found_data = sub(r"<Inn_Objects", r"<Inn_Objects ", found_data)
-                found_data = sub(r"<Items", r"<Items ", found_data)
-                found_data = sub(r"<LastArenaConversion", r"<LastArenaConversion ", found_data)
-                found_data = sub(r"<LastPonyUsed", r"<LastPonyUsed ", found_data)
-                found_data = sub(r"<LbEntries", r"<LbEntries ", found_data)
-                found_data = sub(r"<LbEntry", r"<LbEntry ", found_data)
-                found_data = sub(r"<Leaderboard", r"<Leaderboard ", found_data)
-                found_data = sub(r"<Level", r"<Level ", found_data)
-                found_data = sub(r"<Limitations", r"<Limitations ", found_data)
-                found_data = sub(r"<Local_Best_Scores", r"<Local_Best_Scores ", found_data)
-                found_data = sub(r"<LockManager", r"<LockManager ", found_data)
-                found_data = sub(r"<LottoData", r"<LottoData ", found_data)
-                found_data = sub(r"<LottoPlayTimers", r"<LottoPlayTimers ", found_data)
-                found_data = sub(r"<MZTriggeredList", r"<MZTriggeredList ", found_data)
-                found_data = sub(r"<MainReward", r"<MainReward ", found_data)
-                found_data = sub(r"<Mane", r"<Mane ", found_data)
-                found_data = sub(r"<MapZone", r"<MapZone ", found_data)
-                found_data = sub(r"<MasterExpansionZone_Objects", r"<MasterExpansionZone_Objects ", found_data)
-                found_data = sub(r"<MazeBlock_Objects", r"<MazeBlock_Objects ", found_data)
-                found_data = sub(r"<MilestoneReachedSent", r"<MilestoneReachedSent ", found_data)
-                found_data = sub(r"<Minecart", r"<Minecart ", found_data)
-                found_data = sub(r"<MiniGame", r"<MiniGame ", found_data)
-                found_data = sub(r"<ModelOverride", r"<ModelOverride ", found_data)
-                found_data = sub(r"<Notifications", r"<Notifications ", found_data)
-                found_data = sub(r"<ObjectCategoryList", r"<ObjectCategoryList ", found_data)
-                found_data = sub(r"<ObjectCount", r"<ObjectCount ", found_data)
-                found_data = sub(r"<OwnedAlterFormOfPony", r"<OwnedAlterFormOfPony ", found_data)
-                found_data = sub(r"<OwnedTheme", r"<OwnedTheme ", found_data)
-                found_data = sub(r"<Owned_Coupons", r"<Owned_Coupons ", found_data)
-                found_data = sub(r"<PNAlert", r"<PNAlert ", found_data)
-                found_data = sub(r"<POP", r"<POP ", found_data)
-                found_data = sub(r"<Params", r"<Params ", found_data)
-                found_data = sub(r"<Parasprite_Objects", r"<Parasprite_Objects ", found_data)
-                found_data = sub(r"<ParcelItem", r"<ParcelItem ", found_data)
-                found_data = sub(r"<Parcels", r"<Parcels ", found_data)
-                found_data = sub(r"<PartialUI", r"<PartialUI ", found_data)
-                found_data = sub(r"<Path_Objects", r"<Path_Objects ", found_data)
-                found_data = sub(r"<PendingTravelPonyEventList", r"<PendingTravelPonyEventList ", found_data)
-                found_data = sub(r"<PhaseInfo", r"<PhaseInfo ", found_data)
-                found_data = sub(r"<PiggyBank", r"<PiggyBank ", found_data)
-                found_data = sub(r"<PlayerData", r"<PlayerData ", found_data)
-                found_data = sub(r"<Plunderseed_Vine_Objects", r"<Plunderseed_Vine_Objects ", found_data)
-                found_data = sub(r"<Pointcut", r"<Pointcut ", found_data)
-                found_data = sub(r"<PointsData", r"<PointsData ", found_data)
-                found_data = sub(r"<PonyInCrystal_Objects", r"<PonyInCrystal_Objects ", found_data)
-                found_data = sub(r"<PonyPartsData", r"<PonyPartsData ", found_data)
-                found_data = sub(r"<PonyTaskData", r"<PonyTaskData ", found_data)
-                found_data = sub(r"<Pony_House_Objects", r"<Pony_House_Objects ", found_data)
-                found_data = sub(r"<Pony_Objects", r"<Pony_Objects ", found_data)
-                found_data = sub(r"<PopCurrency", r"<PopCurrency ", found_data)
-                found_data = sub(r"<Position", r"<Position ", found_data)
-                found_data = sub(r"<Prize2", r"<Prize2 ", found_data)
-                found_data = sub(r"<PrizeDefinition", r"<PrizeDefinition ", found_data)
-                found_data = sub(r"<Prizes", r"<Prizes ", found_data)
-                found_data = sub(r"<ProcessedRefunds", r"<ProcessedRefunds ", found_data)
-                found_data = sub(r"<PurchasedPrints", r"<PurchasedPrints ", found_data)
-                found_data = sub(r"<QuestData", r"<QuestData ", found_data)
-                found_data = sub(r"<Quests", r"<Quests ", found_data)
-                found_data = sub(r"<RandomPro", r"<RandomPro ", found_data)
-                found_data = sub(r"<RateUsManager", r"<RateUsManager ", found_data)
-                found_data = sub(r"<Rating", r"<Rating ", found_data)
-                found_data = sub(r"<Received_Gifts", r"<Received_Gifts ", found_data)
-                found_data = sub(r"<RedeemItem", r"<RedeemItem ", found_data)
-                found_data = sub(r"<RedeemList", r"<RedeemList ", found_data)
-                found_data = sub(r"<Referrals", r"<Referrals ", found_data)
-                found_data = sub(r"<RestoreCostList", r"<RestoreCostList ", found_data)
-                found_data = sub(r"<RewardCalendarEvents", r"<RewardCalendarEvents ", found_data)
-                found_data = sub(r"<Rewards", r"<Rewards ", found_data)
-                found_data = sub(r"<SS_TLS_Eggs", r"<SS_TLS_Eggs ", found_data)
-                found_data = sub(r"<SavedQuestForSkipList", r"<SavedQuestForSkipList ", found_data)
-                found_data = sub(r"<SceneData", r"<SceneData ", found_data)
-                found_data = sub(r"<Scene_Party_Objects", r"<Scene_Party_Objects ", found_data)
-                found_data = sub(r"<SeasonalSlots", r"<SeasonalSlots ", found_data)
-                found_data = sub(r"<SentPNs", r"<SentPNs ", found_data)
-                found_data = sub(r"<Sent_Gifts", r"<Sent_Gifts ", found_data)
-                found_data = sub(r"<Shards", r"<Shards ", found_data)
-                found_data = sub(r"<ShopProduction", r"<ShopProduction ", found_data)
-                found_data = sub(r"<Slots", r"<Slots ", found_data)
-                found_data = sub(r"<Snapping_Vine_Objects", r"<Snapping_Vine_Objects ", found_data)
-                found_data = sub(r"<SocialAcquisitionManager", r"<SocialAcquisitionManager ", found_data)
-                found_data = sub(r"<SocialLeaderboard_Entry", r"<SocialLeaderboard_Entry ", found_data)
-                found_data = sub(r"<SocialWeekly", r"<SocialWeekly ", found_data)
-                found_data = sub(r"<SoloLeaderboard", r"<SoloLeaderboard ", found_data)
-                found_data = sub(r"<Song_Timer", r"<Song_Timer ", found_data)
-                found_data = sub(r"<SpeedUpData", r"<SpeedUpData ", found_data)
-                found_data = sub(r"<StarMasteryClaimed", r"<StarMasteryClaimed ", found_data)
-                found_data = sub(r"<StarMasteryGlobal", r"<StarMasteryGlobal ", found_data)
-                found_data = sub(r"<Storage", r"<Storage ", found_data)
-                found_data = sub(r"<StoredItem", r"<StoredItem ", found_data)
-                found_data = sub(r"<StoryEvents", r"<StoryEvents ", found_data)
-                found_data = sub(r"<StreakModule", r"<StreakModule ", found_data)
-                found_data = sub(r"<SubscribeData", r"<SubscribeData ", found_data)
-                found_data = sub(r"<SubscriptionRewardEventList", r"<SubscriptionRewardEventList ", found_data)
-                found_data = sub(r"<SubscriptionRewardRecord", r"<SubscriptionRewardRecord ", found_data)
-                found_data = sub(r"<TLS_Boss_Ursa", r"<TLS_Boss_Ursa ", found_data)
-                found_data = sub(r"<TOHActiveVines", r"<TOHActiveVines ", found_data)
-                found_data = sub(r"<TOHBranchHealed", r"<TOHBranchHealed ", found_data)
-                found_data = sub(r"<TOHCommunityEvent", r"<TOHCommunityEvent ", found_data)
-                found_data = sub(r"<Tail", r"<Tail ", found_data)
-                found_data = sub(r"<TapableContainer_Objects", r"<TapableContainer_Objects ", found_data)
-                found_data = sub(r"<TapableContainers", r"<TapableContainers ", found_data)
-                found_data = sub(r"<TaskTokens", r"<TaskTokens ", found_data)
-                found_data = sub(r"<Themes", r"<Themes ", found_data)
-                found_data = sub(r"<TimeLimitedPrize", r"<TimeLimitedPrize ", found_data)
-                found_data = sub(r"<TimeStamps", r"<TimeStamps ", found_data)
-                found_data = sub(r"<Timers", r"<Timers ", found_data)
-                found_data = sub(r"<TirekEventData", r"<TirekEventData ", found_data)
-                found_data = sub(r"<TirekSpawnInfo", r"<TirekSpawnInfo ", found_data)
-                found_data = sub(r"<Tirek_Objects", r"<Tirek_Objects ", found_data)
-                found_data = sub(r"<TotemInfo", r"<TotemInfo ", found_data)
-                found_data = sub(r"<TotemStone_Objects", r"<TotemStone_Objects ", found_data)
-                found_data = sub(r"<Tournament", r"<Tournament ", found_data)
-                found_data = sub(r"<TrackingData", r"<TrackingData ", found_data)
-                found_data = sub(r"<TrackingEvent", r"<TrackingEvent ", found_data)
-                found_data = sub(r"<TrainStation", r"<TrainStation ", found_data)
-                found_data = sub(r"<TravelPonyEnter", r"<TravelPonyEnter ", found_data)
-                found_data = sub(r"<TravelPonyEvent", r"<TravelPonyEvent ", found_data)
-                found_data = sub(r"<TravelersCafe_Objects", r"<TravelersCafe_Objects ", found_data)
-                found_data = sub(r"<Treasure_Gifts", r"<Treasure_Gifts ", found_data)
-                found_data = sub(r"<Treasure_Objects", r"<Treasure_Objects ", found_data)
-                found_data = sub(r"<TreeOfHarmony", r"<TreeOfHarmony ", found_data)
-                found_data = sub(r"<Trophies", r"<Trophies ", found_data)
-                found_data = sub(r"<UnviewedList", r"<UnviewedList ", found_data)
-                found_data = sub(r"<Upgrades", r"<Upgrades ", found_data)
-                found_data = sub(r"<UploadToCloud", r"<UploadToCloud ", found_data)
-                found_data = sub(r"<ViewedCollectionsList", r"<ViewedCollectionsList ", found_data)
-                found_data = sub(r"<ViewedList", r"<ViewedList ", found_data)
-                found_data = sub(r"<WatchedSets", r"<WatchedSets ", found_data)
-                found_data = sub(r"<WereAvailableBluePrints", r"<WereAvailableBluePrints ", found_data)
-                found_data = sub(r"<WithFreeClear", r"<WithFreeClear ", found_data)
-                found_data = sub(r"<ZecorasShop", r"<ZecorasShop ", found_data)
-                found_data = sub(r"<Zone_Objects", r"<Zone_Objects ", found_data)
-                found_data = sub(r"<bundles", r"<bundles ", found_data)
-                found_data = sub(r"<editorNew", r"<editorNew ", found_data)
-                found_data = sub(r"<editorTimeLimited", r"<editorTimeLimited ", found_data)
-                found_data = sub(r"<fashionActive", r"<fashionActive ", found_data)
-                found_data = sub(r"<fashionPrize", r"<fashionPrize ", found_data)
-                found_data = sub(r"<gq", r"<gq ", found_data)
-                found_data = sub(r"<granted_items", r"<granted_items ", found_data)
-                found_data = sub(r"<item", r"<item ", found_data)
-                found_data = sub(r"<minecart", r"<minecart ", found_data)
-                found_data = sub(r"<travelNew", r"<travelNew ", found_data)
-                found_data = sub(r"<travelPrize", r"<travelPrize ", found_data)
-                found_data = sub(r"<used_boosters", r"<used_boosters ", found_data)
-                found_data = sub(r"<vip", r"<vip ", found_data)
-                found_data = sub(r"<zecora", r"<zecora ", found_data)
-
-                found_data = sub(r"<ObjectID", r"<Object ID", found_data)
-                found_data = sub(r" >", r">", found_data)
-                found_data = sub(r"ExpansionExpanded", r"Expansion Expanded", found_data)
-                found_data = sub(r"Expansion_CanterlotExpanded", r"Expansion_Canterlot Expanded", found_data)
-                found_data = sub(r"Expansion_Sweet_Apple_AcresExpanded", r"Expansion_Sweet_Apple_Acres Expanded",
-                                 found_data)
-                found_data = sub(r"Expansion_Everfree_ForestExpanded", r"Expansion_Everfree_Forest Expanded",
-                                 found_data)
-                found_data = sub(r"Expansion_Crystal_EmpireExpanded", r"Expansion_Crystal_Empire Expanded", found_data)
-                found_data = sub(r"Expansion_KlugetownExpanded", r"Expansion_Klugetown Expanded", found_data)
-                found_data = sub(r"FriendsFriendCount", r"Friends FriendCount", found_data)
-                found_data = sub(r'MilestoneReachedSent "', r"MilestoneReachedSent/", found_data)
-                found_data = sub(r"Claimed>", r'Claimed">', found_data)
-                found_data = sub(r"RewardMainId", r"Reward MainId", found_data)
-                found_data = sub(r"TotemTotem", r"Totem Totem", found_data)
-                found_data = sub(r"SlotTimerDataSlotName", r"Slot TimerDataSlotName", found_data)
-                found_data = sub(r"AltPrizestring", r"AltPrize string", found_data)
-                found_data = sub(r'image"', r'image="', found_data)
-                found_data = sub(r"ItemID", r"Item ID", found_data)
-                found_data = sub(r"CollectionID", r"Collection ID", found_data)
-                found_data = sub(r"BodyValue", r"Body Value", found_data)
-                found_data = sub(r"<ObjectCategoryID", r"<ObjectCategory ID", found_data)
-                found_data = sub(r"<GlobalCategoryCategory", r"<GlobalCategory Category", found_data)
-                found_data = sub(r"<TimeLast", r"<Time Last", found_data)
-                found_data = sub(r"BookIcon", r"BookIcon=", found_data)
-                tags = findall(r"<([\w\s]+)>", found_data)
-                for tag in tags:
-                    if len(findall(rf"</{tag}>", found_data)) == 0:
-                        found_data = sub(rf"<{tag}", rf"<{tag}/", found_data)
-
-                found_data = sub(r"", r"", found_data)
-                found_data = sub(r"", r"", found_data)
-
-                found_data = sub(r"><", r">\n<", found_data)
-                if len(found_data) != 0:
-                    with open(f"mlp_save_prime_{i}.xml", "w", encoding="utf-8") as output_file:
-                        output_file.write(str(found_data))
+    if exists(path="bin"):
+        files = [x for x in listdir(path="bin") if isfile(path=join("bin", x)) and join("bin", x).endswith(".bin")]
+        i, ii = 1, 1
+        if len(files) > 0:
+            for file in files:
+                try:
+                    print(f"[{i} из {len(files)}] Ищем данные в: {join('bin', file)}")
+                    data = b""
+                    with open(file=join("bin", file),
+                              mode="rb") as bin_file:
+                        trigger = False
+                        for line in bin_file.readlines():
+                            if findall(pattern=b"<MLP_Save",
+                                       string=line):
+                                trigger = True
+                            if trigger:
+                                data += line
+                            if findall(pattern=b"MLP_Save>",
+                                       string=line):
+                                trigger = False
+                    if len(data) >= 200000:
+                        print("    Данные найдены. Обработка данных.")
+                        data = sub(pattern=rb'^.*<MLP_Save',
+                                   repl=b'<MLP_Save',
+                                   string=data)
+                        data = sub(pattern=rb'MLP_Save>.*$',
+                                   repl=b'MLP_Save>',
+                                   string=data)
+                        data = sub(pattern=rb'\x00 ',
+                                   repl=b'" ',
+                                   string=data)
+                        data = sub(pattern=rb'\x00"',
+                                   repl=b'="',
+                                   string=data)
+                        data = sub(pattern=rb'\x00<',
+                                   repl=b'><',
+                                   string=data)
+                        data = sub(pattern=rb'\x00/>',
+                                   repl=b'"/>',
+                                   string=data)
+                        data = sub(pattern=rb'\x00>',
+                                   repl=b'">',
+                                   string=data)
+                        data = sub(pattern=rb'\x00',
+                                   repl=b' ',
+                                   string=data)
+                        data = sub(pattern=rb'><',
+                                   repl=b'>\n<',
+                                   string=data)
+                        data = sub(pattern=rb'^<([\w\.]+)">$',
+                                   repl=rb'<\1/>',
+                                   string=data,
+                                   flags=MULTILINE)
+                        print(f"    Создание файла mlp_save_prime_{ii}.xml")
+                        with open(file=f"mlp_save_prime_{ii}.xml",
+                                  mode="w",
+                                  encoding="UTF-8") as mlp_save_prime_xml:
+                            mlp_save_prime_xml.write(data.decode(encoding="UTF-8",
+                                                                 errors="ignore"))
+                        ii += 1
                     i += 1
+                except Exception:
+                    print(f"При обработке файла {join('bin', file)} возникла ошибка. "
+                          f"Файл пропущен.")
         else:
-            print("В папке \"bin\" нет файлов! Поместите в нее бинарные файлы в которых нужно найти данные!")
+            print("В папке bin нет файлов. "
+                  "Загрузите в нее бинарные файлы в которых нужно найти данные.")
             input()
             exit()
     else:
-        makedirs("bin")
-        print("Папки \"bin\" не существует! Создайте папку и поместите в нее бинарные файлы в которых нужно найти "
-              "данные!")
+        makedirs(name="bin")
+        print("Папки bin не существует. "
+              "Была создана пустая папка. "
+              "Загрузите в нее бинарные файлы в которых нужно найти данные.")
         input()
         exit()
