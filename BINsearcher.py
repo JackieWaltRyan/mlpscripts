@@ -1,78 +1,122 @@
 from os import listdir, makedirs
-from os.path import exists, isfile, join
+from os.path import exists, isfile
 from re import findall
+from sys import exit
 
-if __name__ == "__main__":
-    keywords, path = [], "bin"
-    if exists(path="keywords.txt"):
-        with open(file="keywords.txt",
-                  mode="r",
-                  encoding="UTF-8") as keywords_txt:
-            for line in keywords_txt.readlines():
-                if line.strip() != "":
-                    keywords.append(line.strip().encode(encoding="UTF-8",
-                                                        errors="ignore"))
-        if len(keywords) == 0:
-            print(f"В файле keywords.txt нет ключевых слов. "
-                  f"Добавьте ключевые слова в этот файл. "
-                  f"На одной строке одно слово.")
-            input()
-            exit()
-        else:
-            if exists(path=path):
-                files = [x for x in listdir(path=path) if isfile(path=join(path, x)) and join(path, x).endswith(".bin")]
-                data, i = [], 1
-                if len(files) > 0:
-                    for file in files:
-                        print(f"[{i} из {len(files)}] Ищем данные в: {join(path, file)}")
-                        with open(file=join(path, file),
-                                  mode="rb") as bin_file:
-                            for line in bin_file.readlines():
+
+def find_bin_files(keywords):
+    try:
+        if exists(path="bin"):
+            files = [x for x in listdir(path="bin") if isfile(path=f"bin/{x}") and f"bin/{x}".endswith(".bin")]
+            data, i, response = {}, 1, True
+            if len(files) > 0:
+                for file in files:
+                    print(f"[{i} из {len(files)}] Ищем данные в: bin/{file}")
+                    try:
+                        with open(file=f"bin/{file}",
+                                  mode="rb") as input_bin_file:
+                            for line in input_bin_file.readlines():
                                 for keyword in keywords:
-                                    for word in findall(pattern=rb"(%s_\w+)" % keyword,
+                                    if keyword not in data:
+                                        data.update({keyword: []})
+                                    for word in findall(pattern=rb"(%s_\w+)" % keyword.encode(encoding="UTF-8",
+                                                                                              errors="ignore"),
                                                         string=line):
                                         if word.decode(encoding="UTF-8",
-                                                       errors="ignore") not in data:
-                                            data.append(word.decode(encoding="UTF-8",
-                                                                    errors="ignore"))
-                        i += 1
-                    with open(file="output_data.xml",
-                              mode="w",
-                              encoding="UTF-8") as output_data_xml:
-                        for item in data:
-                            if item.startswith("Pony_"):
-                                item = f"			<StoredItem ID=\"{item}\" PonyLevel=\"5\"/>"
-                            if item.startswith("House_"):
-                                item = f"			<StoredItem ID=\"{item}\"/>"
-                            if item.startswith("POP_"):
-                                item = f"			<Item ID=\"{item}\"/>"
-                            if item.startswith("Decoration_"):
-                                item = f"			<StoredItem ID=\"{item}\" Count=\"1000\"/>"
-                            if item.startswith("Theme_"):
-                                item = f"			<OwnedTheme ID=\"{item}\"/>"
-                            if item.startswith("RoadBuildingPermit_"):
-                                item = f"			<OwnedRBP ID=\"{item}\"/>"
-                            output_data_xml.write(f"{item}\n")
-                else:
-                    print(f"В папке {path} нет файлов. "
-                          f"Загрузите в нее бинарные файлы в которых нужно найти данные.")
-                    input()
-                    exit()
+                                                       errors="ignore") not in data[keyword]:
+                                            data[keyword].append(word.decode(encoding="UTF-8",
+                                                                             errors="ignore"))
+                    except Exception:
+                        print(f"При обработке файла bin/{file} возникла ошибка. "
+                              f"Возможно данные в файле повреждены или нет прав на чтение файлов. "
+                              f"Файл пропущен.")
+                        response = False if response else False
+                    i += 1
+                if not exists(path="TXT"):
+                    print(f"2: Создание папки TXT.")
+                    try:
+                        makedirs(name="TXT")
+                    except Exception:
+                        print(f"Во время создания папки TXT возникла ошибка. "
+                              f"Возможно нет прав на создания папок.")
+                        response = False
+                for key in data:
+                    print(f"3: Создание файла TXT/{key}.txt.")
+                    try:
+                        with open(file=f"TXT/{key}.txt",
+                                  mode="w",
+                                  encoding="UTF-8") as output_txt_file:
+                            for item in data[key]:
+                                output_txt_file.write(f"{item}\n")
+                    except Exception:
+                        print(f"Во время создания файла TXT/{key}.txt возникла ошибка. "
+                              f"Возможно нет прав на создания файлов."
+                              f"Файл пропущен.")
+                        response = False
+                return response
             else:
-                makedirs(name=path)
-                print(f"Папки {path} не существует. "
-                      f"Была создана пустая папка. "
-                      f"Загрузите в нее бинарные файлы в которых нужно найти данные.")
-                input()
-                exit()
-    else:
-        with open(file="keywords.txt",
-                  mode="w",
-                  encoding="UTF-8") as keywords_txt:
-            keywords_txt.close()
-        print(f"Файл keywords.txt не существует. "
-              f"Был создан пустой файл. "
-              f"Добавьте в него ключевые слова. "
-              f"На одной строке одно слово.")
+                print("В папке bin нет файлов. "
+                      "Загрузите в нее бинарные файлы в которых нужно найти данные.")
+                return False
+        else:
+            print(f"Папки bin не существует. "
+                  f"Будет создана пустая папка. "
+                  f"Загрузите в нее бинарные файлы в которых нужно найти данные.")
+            try:
+                makedirs(name="bin")
+            except Exception:
+                print(f"Во время создания папки bin возникла ошибка. "
+                      f"Возможно нет прав на создания папок.")
+            return False
+    except Exception:
+        print("Во время обработки файлов в папке bin возникла ошибка. "
+              "Возможно файлы в папке повреждены или нет прав на чтение файлов.")
+        return False
+
+
+def load_file_settings():
+    try:
+        if exists(path="BINsearcher.txt"):
+            print("1: Обработка файла BINsearcher.txt.")
+            with open(file="BINsearcher.txt",
+                      mode="r",
+                      encoding="UTF-8") as input_file_txt:
+                keywords = [x.strip() for x in input_file_txt.readlines() if x.strip() != ""]
+                if len(keywords) > 0:
+                    return find_bin_files(keywords=keywords)
+                else:
+                    print("В файле BINsearcher.txt нет ключевых слов. "
+                          "Добавьте ключевые слова в этот файл. "
+                          "На одной строке одно слово. "
+                          "Для работы программы нужно добавить хотя бы один.")
+                    return False
+        else:
+            print("Файл настроек BINsearcher.txt не обнаружен. "
+                  "Будет создан новый пустой файл. "
+                  "Добавьте в него ключевые слова. "
+                  "На одной строке одно слово. "
+                  "Для работы программы нужно добавить хотя бы один.")
+            try:
+                with open(file="BINsearcher.txt",
+                          mode="w",
+                          encoding="UTF-8") as input_file_txt:
+                    input_file_txt.close()
+            except Exception:
+                print("Во время создания файла BINsearcher.txt возникла ошибка. "
+                      "Возможно нет прав на создания файлов.")
+            return False
+    except Exception:
+        print("Во время обработки файла настроек BINsearcher.txt возникла ошибка. "
+              "Возможно данные в файле повреждены или нет прав на чтение файлов.")
+        return False
+
+
+if __name__ == "__main__":
+    try:
+        if load_file_settings():
+            exit()
+        else:
+            raise Exception
+    except Exception:
         input()
         exit()
