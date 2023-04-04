@@ -4,7 +4,7 @@ from sys import exit
 if __name__ == "__main__":
     try:
         list_files, response, i = [], True, 1
-        print("1. Поиск всех LOC файлов...")
+        print("1. Поиск всех LOC файлов...\n")
         for root, dirs, files in walk(top=getcwd()):
             folder = root.replace(f"{getcwd()}\\", "").replace(getcwd(), "").replace("\\", "/")
             list_files.extend([f"{folder}/{x}" if len(folder) > 0 else x for x in files if x.endswith(".loc")])
@@ -43,23 +43,25 @@ if __name__ == "__main__":
                                   encoding="UTF-8") as output_txt_file:
                             output_txt_file.write(output[:-1])
                     except Exception:
-                        print(f"Во время создания файла {file[:-4]}.txt возникла ошибка. "
-                              f"Возможно нет прав на создания файлов.")
+                        print(f"[WARNING] Во время создания файла {file[:-4]}.txt возникла ошибка. "
+                              f"Возможно нет прав на создания файлов. "
+                              f"Файл пропущен.\n")
                         response = False
                     try:
                         remove(path=file)
                     except Exception:
-                        print(f"Во время удаления файла {file} возникла ошибка. "
-                              f"Возможно нет прав на удаление файлов.")
+                        print(f"[WARNING] Во время удаления файла {file} возникла ошибка. "
+                              f"Возможно нет прав на удаление файлов. "
+                              f"Файл пропущен.\n")
                         response = False
                 except Exception:
-                    print(f"Во время обработки файла {file} возникла ошибка. "
+                    print(f"[WARNING] Во время обработки файла {file} возникла ошибка. "
                           f"Возможно данные в файле повреждены или нет прав на чтение файлов. "
-                          f"Файл пропущен.")
+                          f"Файл пропущен.\n")
                     response = False
                 i += 1
         else:
-            print("LOC файлы не найдены.")
+            print("[INFO] LOC файлы не найдены.\n")
             response = False
         if response:
             exit()

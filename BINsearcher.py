@@ -27,21 +27,21 @@ def find_bin_files(keywords):
                                             data[keyword].append(word.decode(encoding="UTF-8",
                                                                              errors="ignore"))
                     except Exception:
-                        print(f"При обработке файла bin/{file} возникла ошибка. "
+                        print(f"[WARNING] При обработке файла bin/{file} возникла ошибка. "
                               f"Возможно данные в файле повреждены или нет прав на чтение файлов. "
-                              f"Файл пропущен.")
+                              f"Файл пропущен.\n")
                         response = False if response else False
                     i += 1
                 if not exists(path="TXT"):
-                    print(f"2: Создание папки TXT.")
+                    print(f"2: Создание папки TXT.\n")
                     try:
                         makedirs(name="TXT")
                     except Exception:
-                        print(f"Во время создания папки TXT возникла ошибка. "
-                              f"Возможно нет прав на создания папок.")
+                        print(f"[ERROR] Во время создания папки TXT возникла ошибка. "
+                              f"Возможно нет прав на создания папок.\n")
                         response = False
                 for key in data:
-                    print(f"3: Создание файла TXT/{key}.txt.")
+                    print(f"3: Создание файла TXT/{key}.txt.\n")
                     try:
                         with open(file=f"TXT/{key}.txt",
                                   mode="w",
@@ -49,35 +49,35 @@ def find_bin_files(keywords):
                             for item in data[key]:
                                 output_txt_file.write(f"{item}\n")
                     except Exception:
-                        print(f"Во время создания файла TXT/{key}.txt возникла ошибка. "
+                        print(f"[WARNING] Во время создания файла TXT/{key}.txt возникла ошибка. "
                               f"Возможно нет прав на создания файлов."
-                              f"Файл пропущен.")
+                              f"Файл пропущен.\n")
                         response = False
                 return response
             else:
-                print("В папке bin нет файлов. "
-                      "Загрузите в нее бинарные файлы в которых нужно найти данные.")
+                print("[ERROR] В папке bin нет файлов. "
+                      "Загрузите в нее бинарные файлы в которых нужно найти данные.\n")
                 return False
         else:
-            print(f"Папки bin не существует. "
+            print(f"[ERROR] Папки bin не существует. "
                   f"Будет создана пустая папка. "
-                  f"Загрузите в нее бинарные файлы в которых нужно найти данные.")
+                  f"Загрузите в нее бинарные файлы в которых нужно найти данные.\n")
             try:
                 makedirs(name="bin")
             except Exception:
-                print(f"Во время создания папки bin возникла ошибка. "
-                      f"Возможно нет прав на создания папок.")
+                print(f"[ERROR] Во время создания папки bin возникла ошибка. "
+                      f"Возможно нет прав на создания папок.\n")
             return False
     except Exception:
-        print("Во время обработки файлов в папке bin возникла ошибка. "
-              "Возможно файлы в папке повреждены или нет прав на чтение файлов.")
+        print("[ERROR] Во время обработки файлов в папке bin возникла ошибка. "
+              "Возможно файлы в папке повреждены или нет прав на чтение файлов.\n")
         return False
 
 
 def load_file_settings():
     try:
         if exists(path="BINsearcher.txt"):
-            print("1: Обработка файла BINsearcher.txt.")
+            print("1: Обработка файла BINsearcher.txt.\n")
             with open(file="BINsearcher.txt",
                       mode="r",
                       encoding="UTF-8") as input_file_txt:
@@ -85,29 +85,29 @@ def load_file_settings():
                 if len(keywords) > 0:
                     return find_bin_files(keywords=keywords)
                 else:
-                    print("В файле BINsearcher.txt нет ключевых слов. "
+                    print("[ERROR] В файле BINsearcher.txt нет ключевых слов. "
                           "Добавьте ключевые слова в этот файл. "
                           "На одной строке одно слово. "
-                          "Для работы программы нужно добавить хотя бы один.")
+                          "Для работы программы нужно добавить хотя бы один.\n")
                     return False
         else:
-            print("Файл настроек BINsearcher.txt не обнаружен. "
+            print("[INFO] Файл настроек BINsearcher.txt не обнаружен. "
                   "Будет создан новый пустой файл. "
                   "Добавьте в него ключевые слова. "
                   "На одной строке одно слово. "
-                  "Для работы программы нужно добавить хотя бы один.")
+                  "Для работы программы нужно добавить хотя бы один.\n")
             try:
                 with open(file="BINsearcher.txt",
                           mode="w",
                           encoding="UTF-8") as input_file_txt:
                     input_file_txt.close()
             except Exception:
-                print("Во время создания файла BINsearcher.txt возникла ошибка. "
-                      "Возможно нет прав на создания файлов.")
+                print("[ERROR] Во время создания файла BINsearcher.txt возникла ошибка. "
+                      "Возможно нет прав на создания файлов.\n")
             return False
     except Exception:
-        print("Во время обработки файла настроек BINsearcher.txt возникла ошибка. "
-              "Возможно данные в файле повреждены или нет прав на чтение файлов.")
+        print("[ERROR] Во время обработки файла настроек BINsearcher.txt возникла ошибка. "
+              "Возможно данные в файле повреждены или нет прав на чтение файлов.\n")
         return False
 
 
