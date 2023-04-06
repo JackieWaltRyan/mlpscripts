@@ -1,41 +1,10 @@
 from base64 import b64encode
 from json import loads, dump, dumps
 from os import walk, makedirs
-from os.path import join, exists
+from os.path import exists
+from sys import exit
 
 from bs4 import BeautifulSoup
-
-SETTINGS = {"Pony": False,
-            "House": False,
-            "Decoration": False,
-            "POP": False,
-            "Theme": False,
-            "Avatar": False,
-            "AvatarFrame": False,
-            "Booster": False,
-            "Totem": False,
-            "DestroyedHouse": False,
-            "Inn": False,
-            "PartyDecore": False,
-            "Path": False,
-            "QuestItem": False,
-            "TravelersCafe": False}
-
-CATEGORIES = {"Pony": ["Pony", ["Name", "Unlocal"], ["Shop", "Icon"]],
-              "House": ["Pony_House", ["Name", "Unlocal"], ["Shop", "Icon"]],
-              "Decoration": ["Decore", ["Name", "Unlocal"], ["Shop", "Icon"]],
-              "POP": ["PonySet", ["PonySet", "Localization"], ["PonySet", "Icon"]],
-              "Theme": ["Theme", ["Appearance", "Name"], ["Appearance", "Image"]],
-              "Avatar": ["ProfileAvatar", ["Shop", "Label"], ["Settings", "PictureActive"]],
-              "AvatarFrame": ["ProfileAvatarFrame", ["Shop", "Label"], ["Shop", "Icon"]],
-              "Booster": ["ProgressBooster", ["Shop", "Label"], ["Shop", "Icon"]],
-              "Totem": ["Totem", ["Name", "Unlocal"], ["Production", "ShopIcon"]],
-              "DestroyedHouse": ["DestroyedHouse", ["Name", "Unlocal"], ["Icon", "QuestIcon"]],
-              "Inn": ["Inn", ["Name", "Unlocal"], ["Icon", "BookIcon"]],
-              "PartyDecore": ["PartySceneDecore", ["Name", "Unlocal"], ["Shop", "Icon"]],
-              "Path": ["Path", ["Name", "Unlocal"], ["Shop", "Icon"]],
-              "QuestItem": ["QuestSpecialItem", ["QuestSpecialItem", "Name"], ["QuestSpecialItem", "Icon"]],
-              "TravelersCafe": ["TravelersCafe", ["Name", "Unlocal"], ["Shop", "Icon"]]}
 
 FAKE_ALL = str("iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAJ5ElEQVR42u2bC3BU1RnHs5sXJEACJkAKhHcpFSsMCFWpDoyv8dHp"
                "Y9RSxbZ2ZGrFFoulVVrpgK2RR+toLYNVwJFR22m1VkUGgQCVgtDhIdUKyCOP3U3CPpLdJJv36e/Od2bO3dxd2WgICcmZ+c3d3XvO"
@@ -72,6 +41,242 @@ FAKE_ALL = str("iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAJ5ElEQVR42u2bC3BU
                "JP8Yaetdf4w4/xorvdj+Guv7c7Tv7/G+FyT6XpHpLS9JVdhfkuqNr8lthCsgre9FyU5+VfbRbvyqbPD8vCprcPXel6UNbhgF93aT"
                "1+Wbu/B1eUM32TDhd2yYuMBbZrxduGXmAPzebJm58Jum5nbxpqm7dK9nXuzb5kLtts3dabbN9YyNk0vhBdicYONkbc/cOJn81tmC"
                "3rV1NvnN0yNhbHfYPN3rt8//H0EYXlIdCHPBAAAAAElFTkSuQmCC")
+
+FAKE_PONY = str("iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAABED0lEQVR4XuzUwREAEBAEsGV8VK8EpZ4mvEiKSKuq/AnouQcQACAA"
+                "QACAAAABAAIABAAIABAAIABAAIAAAAEAAgAEAAgAEAAgAEAAgAAAAQACAAQACAAQADDykD1XXnHY+/NoTa6zsPf/Pnvvqnqn8565"
+                "50E9Sq3Rsi1ZYHkEgw22McSYIRB+hoDhAhmBJAQMIeESphCm5HKdRbDh4hsCBnNjsAHJtjzKo2xZY3er5/HMwztU1d77+YmcXuqW"
+                "JbXUrT59zrHro/Wso/VqnT5Hf9R3Ve3aVR2J1LXGWBxmUNsIQp+cGZnjmDuFxXBbeTOfTe7ner+XRbqcMRNsD5v4YvIwG8N6XuRv"
+                "4oyZ5H73MC/0N3JzuI6/Se/hmDnFdeUuBmjy8fRzGDWkmuCw1MhoxDpNrdPQBuNxhDN2Sj6YfNwumEXxeLbFzfZDySfjMXOy+OPZ"
+                "3+KEOU1WqyEt93rvwj+J3i9M1ubfcevUdffkJu8ea55hMenhTWD7wgZOtCZY3x1hoGxwZOAk1yxs5kj7DN3uaZrj19G+5nbSqXms"
+                "h7QQnBesBxN5KoHgoHRKnilFBtGCd1AmkVvvS+lnyqEdnrQQ9jzqOLo9cGYjmKBsOSY0O8JD+zwuWpwXBEEFglFe87fXVAH4ylMR"
+                "BEXpSBfB7M1INjrcSCRuFpHNFjPq1A0tSrfR1mb6uuKVblSHHVh6dOK+cnfsSx460uv36E8ULuR7ujtuHi/WvwAtQmnidSXF9Ex9"
+                "7lDfFh/r2fxub8J+RVkBlSoAFUHoS2470n354/PiwTiw/jX5y4ZT0s1WTVuQpsMOO9xgoq7lcCZRR0ZKQxs4BgADLLAv7MYgTMgM"
+                "63QUeuLX+VFXi20gAnJ9bhZx6u5cX4zeWRj/ptwWR+bs4tFF1/3DEdM+JgjLpFIFoCIIgUAu+Q2ecFNBme3xO3aMmpGvH48jd6yL"
+                "o3a9bgYc5+lFpssSi8UBsE43AAYKdeCBPiAAZLHGurwJudkBsgNKjjaOYyXZ1SiTj3Vc92Bp/Ie5cipVACqB6CJxs8e3m9rYtilu"
+                "fGtbW/8gorzA3wo4wAMRKIGCSxM5L/BkwnkRiJwnbOtufXx2f3/fTH3/Q4OHHxzNB/+NogeDxIOK9rkslSoAFQEsUEtJbk5wP5NL"
+                "8Zpr4w73wvxWwAMKFEuzIhTwgKcWa9w6c8P1Xor3PtQ+OGHVfL/BfADwgPLcVKoAVATB40cXzeKPZD771n/Yf9OGjNqIU+sSHBBY"
+                "nSJOLdct7Bjf1dn7+591H/yDExt6v9GGUzy7ShWASke6m6dl7kev97tfdku4ec+g1tcP6jBLIqBAZHVSAJKYkcR0fEN953fPNuVI"
+                "N/N3keorrWFIlGGFZoTURhygX9a+6B1FmWinSPVsnnI2Oqa9Y6JI9TEVzgpfIaoAVAShxNOTIguEf/Wy4iU3Dcfhb7ombm442kAO"
+                "eNaWCPTZVGzcXD8qP1pOhtclveRGibRsoGWiZCaCKE8lEA1Eo4W3zEbLvBoWomEuGD2TFnJkoanTRaqfE+UeIGctqgJQEYSe9AdH"
+                "dPDW8TD+tet07N/tCLsBB/SBRUBYq5p5jeYp9kHcB45LlALrlua8IlXyVNl0yn3aBv48Gr4ULNPe8UmnhCoAa0YlENYZMd91q7/p"
+                "p2/2L1kHi1+2qCesbZHzlCshLWDjWfv4uNtAb5sYDjS6crA9z094q5+LhkmgWz0LsOpV+vT/00vKF/ynm/yN4zALeJ6rigIwPmO5"
+                "4eFk50s/6v5s40nz12XCt7CaVQGoKEpO8VcvjDe9aXPcYoQgXLaKKJIEMXsec9ftfsz9ei/jf+apDqhUlwCrTnV7L2yIxN+9Lux6"
+                "3biOAQYIPH+VtBDz+GyUyLcNdkzroX3xN4uU99dyUKnOAFZQRRByybcmuH+zPW7/tnFdD8gyHPyV9qI1m0+61+7db3+u0ZW39DPN"
+                "RKszgBVUKSlHRnTordfEa/7J5rgN6HFlVEqnqIACLoCNALDtqL3DeX7+4M7o+nX+P5SFKgBriCB8JVCUKPpN+8rd37sn3AAscPkq"
+                "3lIEp91oKLo1jUG05ByfqBgRNzxtEkHdhtNmnwo/+6UbQ24C7wP6VQDWiJqmfCXwBLaFTa9aH8d3Qp/noyIcuqb8xMGd4XeLTD9m"
+                "fQy3fi7t1vqi9b7w0ZeW/K9v7mdv+OvaLutl78i0/HCjL7eOTvK9s0N44L1VANYIi2GtU7CF9H5ge9zyqhFdb8Dz/FRKp0MmMJHm"
+                "nOzWFVdCWoDzUDroNHWxSJhxwgMg904Ox6Ej20JfxE6wdlQBmJUF1jIFBAnr4ui3j8Xh7RbH8w1ARdly0u0yMfzokW3B18rko0d3"
+                "goqy64BQ74ILYCLRRDo2sL9IlYUBJSuUNaQKwDwd1rJINA63+ZX+jr1NHTBQ8PxV2gum5Txv7tcpT2yVz57eqD2fQJbD5LhSWuVC"
+                "JoJdisJaUgVgQJusZV582+HeskU3DSbUuFIBqCiNnnDtAfvq6dHwHSq8C4jTo5GFQWHLCQsC1UagNW6djrKWqepYRvYPldiEyJVV"
+                "SXLWX/sgv3JiS/w7bzkpEG/8kuGGB+vMDkViFYC17TF7hLWqxDOsg7U7i9v2JerclQ9AxQVhfMYNHt9a/JJafk4CjwULAgwsGDoN"
+                "BQHRKgBrUkHJWpVLAUp7vY7VLA5QrrxKUpJuPmHedHq9/sc8AxNBAROg3oXcCd36Go1AdRvQslYZjKSarBvUIQxmmQJQEYX1Z21r"
+                "ejj8QLehv+s8B1U4FweDiuAdqEA0VQDWlIyEtUrRVkq6w5ECgeVTSYLQ6PKPZ4f03n6Ng0Y5RzEBTIRmR7CRtaXaCVhnrRLsSEa2"
+                "EyLLrzI6ZQamRvzmsxuiJKUoT1BMFEanBdAqAGuJw7FWBWLdYke4KirDC5bheXvtmQ1x0ERmeYIAa/L0vwqAqq7l313QaLlqKmlh"
+                "XtnqmNelubybta8KAKKsXeqBPldJRan3ZOe60/b2ek/erVIFYM3LyVmr+qaYK0J5BK7MtWfl2a/hm4u4uZaMTo8GTJQqAGtdT9Zw"
+                "AMhn+hQPKwFBuHyVPGN+scXMwALb04JnVM8FrCZHr/EkhfB0XlQFYO0IElmrolAW4k91ZJGWtrjcM4GKYWq4+6X793b+n1sfHP9n"
+                "7Y5uSHMdMJGnsFFo9GXAlZKlheTVW4FXTMUAXvzMGZmMHg8Il6OSEXsnenL2Q//DKDfff0v2e5PjZgGUpxKSwmxISnO784anmzWk"
+                "OgPY4bewVqkooqZ30B49sEU37XZqDEQuVcUz3Bm7fcvEht852Pir74r2db/84AuG3jlxYvbtex4J356WhgtJpO1KdjjPR1jbqgBM"
+                "mGnWLsGLP3laJt7+Yn/zOzIaA5dzGVDxNPzwwKbFXa/5dPt9d9bOfOCj8yNfP1kfGvn5Xu3sofm2/amxKcs5iNJOcrYnJWtdFYCz"
+                "Zoq1LKCLCfZPvuAe/PGXlre9NKUNdAHhmZlzE4FIRREcTT/cHMq3/VTXHHvYnv3kZHPh1gfVtX9heqjTFJUfHp411kQwSj31rEt8"
+                "FYBqJ+AKsygGw8P24DtGdbixJ1x3a10zwAPKeXJuIJceBSWZpqRkQKTisdHVts3d9Pr9m+JeO//wbLFY+MXsto7z2Y+dGY/Oeb6r"
+                "vWDbJuIsklmE1aBaBKxoS5vv/LT7wq9+yd3/hVx8x1NoIBDPTaCkJI+5dPunzcTZh8yBg2fN5JRiqAAoRh3rO5skLd3rLQPjU83T"
+                "HG7fS3AWE/nh0+vje3u1WLqAAaTaCbiqVAbjwHu+4B6460v24e++zu/+hQ1xfCAlIRCZlwVO2bOHp2X2A7eEfb86oM3ZrvT/9YLM"
+                "/lRb20CkAhDJisbL6lL+hSv1lG8OcHiHgip5pr/cXjBbR2fklc6bpqsuAda+Mu/wTBRAIBpAQDlPFIRzXyN4BwDWg4iQpHVAuJoM"
+                "kheUZ6P031lQfNwTUouRQKSkDH363a70Jq3a4w+ZR3lEDv7nm2Vf7Rv9a/4JACig1X7/snZdK8hwLRe66RBz9Qxb9EB46MTG+NF+"
+                "xiubXTagVQDWvJ03fCNPS0Ci4kpIc0hKkAhGQYHgoHRQpkq/Iaw7LRiF6XGhpz1OHPgYueZYNSQkuKSGqrKcFDAYDDJjMJ8Szv9j"
+                "MFgsDksSYDKc5rA8dqqg+1sOXXc7t715gAH31X0XQQEY7Y6PnBg80phqz6PSwZ3poQO7cZrG6eH4V90GW9NSZ1n7qgBs2nUHT0vA"
+                "eqXeVVoLQr0LxisuClEgz6BfU7otZWZEuLFncAH2XwML0sUu9KjNFoRmykQ8y/T0IYxNSCRFEFaMQGe8yYbkFl6kG1DDwVOBn52c"
+                "6byuUTQGrVZXeCO9Teb4yGMbJ4fOmCy30c6exbf3IGrw1n+u05Rf7Htt8RWsugQQCF4xheK8QAATzgeg8ND3Sl4oZS70gsEG6Pc9"
+                "6oTrt38DO6NlbmPKffJFZKFLamrMhCmCekQFEUHEcFUoEAJqlbmdQ2xvXMs1IRItNen7Idc7HWOpWOWrnostsrJxo/Nu3MXsDDbF"
+                "9meI2QhiTG6D7reRZ1LdBagohe/Six3miynGs028fsv38/r2dzJkRkAE51KMcVw1RsA5jHUYHynKHr1y8e/nBvL+O7YsDAwm0QFK"
+                "JWB9cmMtb+7LyhZZL6Vx5NPY/iyYhEtSBaCiKF49oHyrvJFX7vlebr39+7h2y8vp5XOUvo9qBITlYGKODg1g77iddTe/km5TmHUL"
+                "zDR6xKLfWnekvBHFcE4lUvP1mwb6w9e1+8O088enN4qlTjTVTkvDJauoRhRliCEGshHSrMn40E5uv/Yt3Hbtm8lcg053kuBzRITn"
+                "TcHFSBZLFtYPMHPtKC6pkdQGUANRA7mLY7bUVw7PGCfKBSqNsjmEMDrTnGC+McPcwDw6cy+mcwpNBi4vAtUaQKWkxEePLwN1m7Jp"
+                "bB+CoR+7dGKHmc5Jzpx+gKZrc1kEpIyoek7vHiAxlvnxjN6Qw/VLvAEMqAhJqS8eWDD/0EUBlHMqBAb762n50xvODB+lXjRBBMl7"
+                "pFMPoEEwta2gvgrA5aoIUSN52QWUTetuIgy1mDu1n/qZDifjKURBEC5GURRDDB5VT4w5kmUU69czs28AdRZbBEwIlAlPKNPIhpP2"
+                "BevPmj2gXKgSycIgI73x24747M7Clh8VBDIHxVGY71FKDlrw9DZVAbgUFaH0PRb6XbawmRsGvoU/838KAmCeNQAGIY2DOM2ohRzd"
+                "MEa4cS9prwO552kpjeE52Tk0b3g6lYJmf+Alw53xtx0a3f9RowYAUgE9CfNHAOHpvbIKwKWrCEI/dBlNarx0x3eRp6DCcyIsGQQQ"
+                "kOneReNhor4iLcwtz7TxpxIYyIdZv7B52+MBwKjhPAfiWB5VACoCViwOkAiiPCtFWSKAQlQQnlEUttrAep5BJQIJw/3RG9Ytrv93"
+                "0fp/H1EvVBzLqqICqpEtRy1lovRTsJFnIZwngHAx3bruSErZAMrFVGcBIyM3n7r9+7606VPvLW1xXxKSKBi0CsByq4zMCJOjSqcV"
+                "ARCujGigPWc2NztkXEQlYGMm44ubt7fywX/eyRb/RWmKCW97iJoqAMurEiwsDEQm1nu8BVGuiDKBF0wl7WZXuJiKAJ4oga0ze77n"
+                "xNCh959pH/+Lvut0jNoqAMuvYiJYL6BgIleCgLYaPRmwUXg2FcWoYcP8LuZrMz96duD4MVTuqc4AroqKyrkIBMEoKM+bAV6YFmbk"
+                "Uu4AVAqumdpz+2x98sWPjT14T81bAFCQKgDLpRINNLuGLBcWmhFRnjeFDaI0uAQVJQ0tu31m1780UJbG/3Y0gV7SJRIBqQKwPCo2"
+                "QFIKouC88DyJChtEqXOJKpGxxW2bouiPHxk5cCrzyZ+WpiRIQKoALJdKNGADtOcN/ZqiAqJcNhNoAwmXqBKxMWW4s2FPJ1v4mbOt"
+                "E6eiiZ9UNLBcqgBUokBaCI2OcLLuUfP8AhCNdgHPZajk1PwAuyauv6Ww+a+fdad+JEi4XxBfBWDZVFQgWlAjBAsCoFyW4JhQoc9l"
+                "qAhQIOq4/tSLXzJf+7uvy2u9wyaamSoAy6oKgA2wbsIwuS6SZyDK5dCY0FHBc5kqhmhKJmtnvTflXYjMgbLsqgBUbABvwRvFeUC4"
+                "VKroGaD/1G3EynNRsQTp50dH9n9YNZ6u5fVYLQIuu4oCKtBcFIoRpdMEF0C5JFqmPOQdcwCLLd1/ZJv/A+PZsuOo/fZa34xdLAQV"
+                "IUrBXDYz28kWft5EM+Oi5aqpAlBpdKHXMHQbSqemiHIptEiZyjNdAOjW9YH7byj/z7TP7o1nzCtqfca4iEpCN5nsHhs6eLdR8wkV"
+                "JUqsAnD1VIKFrC8MzQpFGhEujXdCNFoEG1HB1HIhLUhFES6qogLztZmHzrSP/V/1srkyF05VACpFqgzNGrYed3jH5QhTI5GpUe0j"
+                "Bp9yukwoQHkmFUvXTepMbeK+NGT3sFKqAFSch5lRWGzD2NmICpdEYMY7nc8TPTx2FibXyezsQOwMzQguCk+nkjHdnHj4zODJv7Ux"
+                "QZAqACujIgreQq8OAUWFS3VXNJyKlg+6EjYdk9jLdKrbUNqLBlAuVBE6bpKZ2vT/Csb/jYsOZQVVAajYCB7otgxCQjCKhBITIyA8"
+                "i7tVuCc4ZhMLI5PQa+ipPKNgkZQvU0mZHHhkZrE+84m6r88IwsqrAlARQQTs/FEauSPUB+k1M0yMmKBcxKQKiAfnYXFA8YkeiZYZ"
+                "YD3nVASI9N0Cc82p/ze48ktpyLhsVQAqKlgV6iokF3wWVeiqUHJJDGiJOXMP684Mkm94IRNb1mF9oEwNKiB68d2FSQFFpuSpfsFb"
+                "PXlhACpClKhHhx6Z6Lnuf7XR7Y/EKgDPS2WXCt+owu4LAjCrwl8Dn+RymJS8XmNwssO6U8cJWY2HXjCMtwYbFNFnWEdwkA8oAHmq"
+                "719sxjdDvBWECoCgovnUwOk/7KXdKRstz10VgGqhzlEvUv1H3ukbgqWVZ9Sve8QNGpUhE6lxjoKPlu/pJ3FhZihOlIl+UoWf5RKZ"
+                "CEYV1wvccF8HVyqH9tQ5uaVGlkdcGXmCKqqRKAqARMLEcDg+OmwYm3HVQiCWwvY4MfjYVLD+94yas1RwPK2KKEQD+dLp9Jt6df3a"
+                "LcfNnm3H7M31nux0HmwU6n3hGV7HNdoSS60QRubsC5JS9uaZ3uWd/rEoi8/5qUEjmAADcx4blC1H+gxP5vRrwrFdbeqkGAWTZNg0"
+                "IxIIKD3Tp7s7/UCnF185NtO5E4SvXgokFHb29OGR/f9BTTygokoFx1NURKFINUlKXr3rlL1zYNG+sT3PzeOTBsGwRDlPeTpGob1g"
+                "YYExb/Utm07bl00P67480z9OCvn0pe74KxNhYNYzPBnotCBPIwfiMfKYkyQ1rEsRoKYZO8I2TmbHPn4kj3+2YWDLndlC4KuXpbQd"
+                "ppqnH+umnd9PQqoCT21iFYBKsOAde7K+vGbrcfdPr33U7uVJB71yaRQAF2Dr8XTj0Fz4Z8c3hRui4aeA+y41TMEJPrHYGNj66CQf"
+                "Dh9kSudJ1BI14rCMx1Hu4PUc4VPxsZr2bmm/hWyBVejLz56UK0c4L2G2fnzyyMijf+miLUSUp1MFoFKr9amr8JtbTtjXZeWVfrQ2"
+                "MrAg7DxkX3N0a/gzFV4OnAIil0gFytTiQoNUAwkORbFYcbGZlIVp1Bi+cSTvv7F2tgPUAGU1USIqEUEQFUCuUFQUJYIAKqgUOtOY"
+                "+POZ1tlfrpUNIpEnqQJQCYY0WH74az+e/NjAomyzgWWTFsK24277oW3l3Sp8E3CQKyfz+Dd1pPvTrwhfs01wjYTVuBvQ0XNzfrJ5"
+                "2reKdq1Ztsh8E7BXIACe3C3Sc11qocbpwRNzpwePfSb1KU9SqQIgCmWimxLPr1z/+eRVQ3OyiWUmQJZjtx9zew/sKH+nTPgpUe7n"
+                "MvQ0p8RjMZSUDGhr+GX+9p/ZGjfekNEABPCsPo5Obe6xYyP7f+P60y964P7Nn2zmtlhf87WGoholKk9HeEY2GlHBFDbvJj47u3Pi"
+                "+gVVJJiyF0w4BMITKlUABOhnvLjRlZ/ZMGHfODRnBZSrpd4Xtp5IXuvT8Niptv6qKId5jhTFYPia9EYezo/TjX2MYXRIB99ynd99"
+                "7uAPgLI6KaJmyKgd6tbmPzI3fIZF6ZDk9UQlXlYAXLQSRaWwednKBxFkadQgKjxJpQpA6fSORs+8fXzSvm5ofmVOk4fmDVuP6Xcs"
+                "tMMjs2P8lssNz4UCgnCD3UHaMBzonmGuyAcatn5LRs0DDpTVK9LwzXWt/tAbH2k++qsnJrphsJHRSuul10AZA5d+BmBRUQBcSHh2"
+                "FcNXKRV2J6X8xqbTK3fwL1HGpmX0msP2H7gi7rRlfgkhUha1z1irzvhQRpH0Z+Z975OLdLwSAWH1iqQhIy1rzf32UHz4xDSTkyXd"
+                "0tMtPEYEEa64ShUAATYAf7b1hLuj2RVAWVnC2JR9+Y794Z3Z7ISVGAwiCZCdm9ozTAZk/TKkY2OJvXZ7ay4Q//IROTif01vlfY+4"
+                "kDHcHWvXY31LPbFmYiHn/iOzHJ6cRxVCVK6oShWAYNih8J7dR5LrarmwWtR7wsbTck2ZxO8pbH6LN+WvRwn3RYl/P19UiV+6cP7+"
+                "syjh80HCJ73xf9KV7muHGhm3jm+ePsap/T3ycnUHQEGF4Xx0ywvP3nGP9emuQgqcEfpl5JHjCzx4bI5eEailFmOEK6/ivrp297G7"
+                "Pce/3XnEfU2tL6wmokp7wa5/4YMbfk7Lb5hJfborifVBUYNRQTCcgwJIJBKJElnf2XSDn71+b96Y/e4T7UOPGt87zWzsEmSQVU1J"
+                "Yur25HuueS3xj+6Vz//spJn8m5rWyYtASeTYZIcT010GGynbxhp4VXyIqFKpAnAJq/11ra8/JW/Zfsx9R6sjrD6KUUlGZ1s7YHgH"
+                "RCCwRC++k66UBJJ9sTO0Two3ud7rdFPrKXhWNwUgI+MF3HB7LaT//mP208lxc+p9g6aNRVjse3yI5GUkqhJV2ThcJ0sMPujFLxMq"
+                "VQBUwDsYmJc37Dxkv3t02tRBWb3C0lyyAqMJG2b3joGMQQEEQFj9AgbH9WHf7ZT80j3Jvd1Z5j9oMFgjOGMpfODo2Q4IOCNkiSVL"
+                "DM2awwelUgUAUZ6gAqJgAyhsufZh+y/XTZgbQJc9OEWiebAsAl6Umo0MpIUYlpUAEcg5T1g7PGC43l93Uy1m7/yr9O43dKX/xYiq"
+                "AEaENBEAjk12KcrA+uE6O9a3EKFSBQBs0Ke8Iac1B60F3jU4x22w/Cv+/Szy6G5/z9nx+JcqnM1ybh2dsv/g2gNuV+IvHoFKBAxb"
+                "46YtX1+89APvT++5pSO9MwmOC1kj1DPH9EJBjAvs2dwmRuVJKtVdgCgMecd/2nbCvrjZMwLK8hDyTHl4T/mlYLlNhe+PhncFo/8L"
+                "Mb+Gqb3uEy8p3zA5Gu4D4WIqkYREdsTt6+/wL/jILX7fnm1hE4M6gMWS4J6YmkkocuHAsQ77H5+iVLLUYKs7BtUagHdQ78mNew6Y"
+                "7x9YNAOiLBNhrh05stX/VRT9ReAzooqIw9g6npnuWe6ZmtSFg7v0a94G218AORdXyci4Ody05z7zxd/u2M6/TnD3CSAI52AEVKHb"
+                "D6jCiakuZhayVmRX09KgTo0GDouifIWrAiBRAVCBNGfX6IT85PoJM8gyytPIxFj84OyQ/sLYBPcmHsQ0ML2TUExjyhzXnWfbnP1H"
+                "rY7Zy3NQUQAa2uIa3fmN87pw4ixT/6fAQS6gF1wSAMz3SnxQGqVwouzguR8jjqZRmqZGabtYFb5CVQEwIQJQpOpGps3XbTkqb2SZ"
+                "TYyGmanh+N8Tz715BlOjlkJmsbOPIN1DJAwmI92dt2+Z3fF/N4t2BgXPVaVgU9xOoP/mM2bqyBmZ/IUUwzOxRv73+AIem5zjEftZ"
+                "Chu4wW9muFtjvvAYVb5CVQGIBgBU2NNeMF8/OucAZfkIU2P6V1Nj8dNZLnQaMDXawZ29F9OfRpNBQ8hutNG+p+GbmcEBgUtRWWRr"
+                "3Nq+zd/82r/KPvhOUTkCCgjPRAQy68hwIHC8M8uxRRCEr2BVAPo1Q7AwMsnrRybNm0BZTsFEFlrcPTcoj6alxRY9hg5+AlP2UFsj"
+                "mHJjM8++c/fUDeNG7WUd/BUFDOvj+O3Xlbv/63F78psieskHswoIX9GqAKiBIlVGZt320RmT8CTCEuVKmRyOdBrxbLAaPQY0JWoO"
+                "4gnG4Mps92Bn7HuNJgKRi1NAn+Uevj6HGzh6/uugAQdMKSCcpzwzAfQiv0N8lt9Rnvz/M2ahJnA8cvk8QzpqXxhuvOUxe+RVBvNx"
+                "i825BMJXvCoAtUUlhnhtc1F3u2AABeDMWGR6JLx9dMZsXDfhfuRKREAFnRqNJ2p95jadSghxlqL/EEE80SqF67eGO+u+dvPctRsh"
+                "cFFDAq9K4UUZLEQ4G5a+Rp5snYUtDk55uCuHhyNLFIiAgTsctA3sSeDVNZgJ8N878DHPE25J4MUOZiJPaAgcDnAgwKiBoOf+/AjI"
+                "0owKvKUFmy2c8HAqgAGmIyxGKID9EXoBbkrgjhRuT+HuHN7dB4TLo1gc43FkfG/Y+fMnzelvLSXkBuEJlSoArlTauby+1pMXAKhA"
+                "L41MjIbfPXyN/20V+48fDwBXSq+u+5OShXrfIP0cNzlPTEYRhIVs7vaBfPCNzXIUWOTiFG5w8G8HoNDzAVDAAggosM7AiIMjBfQD"
+                "PFwAwIsTeEkKGy3cfkEARiwsBngwvyAAEW5y8JNNCMITWgLv6sKRLvz/6rDVwRcCHPYwH2FeYSrAyx18WwPmdSlERmA+Lk3/XAAO"
+                "BXhNAl+TwriBgwFQQLh8HotNbvO3vPxv0/mvm5X5v3aaLHJOpQoAZcrgugn7slbPrAfwTsPh7fH+4PixZldenRXyA1xB0TCRp/QC"
+                "QpSIH1gE6RNMoJkPvKTVH7gNcp7VbIQPeThQwu4UthguqmVhnQMKQOFGB29rwE0ZT7GoUDc8yREPUwpfW+NJur2lz7++Bi+owXcA"
+                "KHyhDx/M4Td78Mfdpd/xxRmMOZ5VVLDC86cYHKO6jqY2fmia2UcLii8IwjmV6lkAXjs8L3safUFFtduQY8d2yE8NTkXqHW6r9WUr"
+                "V1C0dILF18oaR4dO8IG9v0Uamyxk87z+i9/TuPX4nRaUZyfwUAn/rQO/lIKwZCrAIQ+5AoBX2JVAL0KpLBH4gx78ZR/+TQt+YpAn"
+                "GTawzQIKCGDgIyX8ty7cUQfDkvv68LE+jFoYMBAUjMBkhEcCfLiAIxEOe3hpvnS5IkA8971tC+ssJAIWMIAVMAKbrtTdGAU8W+KG"
+                "O07J2e1TMvOFBEel2goMQL2QOwbnzaj1wlw7dh+8zt9lAx8emhOG5sympJQGV5BRjFGwKqBKlEgkEkxJqxxs1v0wEHl2AjMBPlDC"
+                "ZOAJ9+TwvdPwxhl43fTjMwMvm4T/MA9z8cu+P8LHPU/hBGqGJ1PYH+B4AZElnynhwRL2WLgmASswXcLb5+Bts/DXJShLTgSY9uej"
+                "9Hd9+OYp2HcGvncCfmsWPtiDPHJlKaDc6K9tjseRbYWUPKFSnQGkhexypbQAZgf5wpHt8RezQoqH9nl2HrADrUURUK4YpYHiSpMz"
+                "3Bnn6x/5VoSMXrK4Zc/EDTsEBxQ8J1FgIsBncnh1HTKBIQCF6QA7LHxtAp8O8Bc5NIQnUWCBpxIg6FM/nI1wwMPmFAD+Zw4I/EwL"
+                "rADAf+/C/9uDWS4gS5GaCjDqAKCjcOrcusWfBXh/CVtz2N6B3xmCQQGEKyVhQEYYeu0Q7U82aXyGShUAgFZHdtdyqc0OhVOHt4f/"
+                "USR6qLSBxWZgx2M2q+WGK8kEGbGBGhpo9ZsMztwE4ihs/pLhztgeiFySUuGhAu6sQSawwcLrM7guwvc1YVxhoguPljD/NAfViPCE"
+                "u7qwI1maTQlPoUBfgXNfX53CN2fwqhoA/G0X3tVbCgWGJ4kKkSUKFAodBRTWW9hp4RMlPFzA7zvoAAhXjqFJ4+YhBq9tUFsKQKUK"
+                "wMCC2WYDdnJU754c1z9PS5Ay0lJhYNFkRrmikpJNrQUaWSmEIBTRgVisuFsE2XjJAfDAZITAko0Ovq8FqcDeFKY81HpPf2e7ZWCf"
+                "OR+S/7QI39GAnQmsczxFrjATQQFV+NEmtAyUwOf78DMLcL8HhKeY16UBsMC+BN5YgyDwugQGBT49D97AH/ZAuMI80zL3+dNydn+T"
+                "BudUqq3AdCbHQuzX4t1ZzjEQWguWIlfX7Entir4PQJFmh82n19OaG1Fq85b2XJ1oLNa6TTa6AS6JQAS6CsqSAQvXGkjkwk1xT0Nh"
+                "p4MXOAA45uFuDy+OAGAUBgUWgHjBQXywBP2yuwSLAe7pw6kIKVAIT3EiwKkAAE7gjU14bR3WWUDgfV0QlhzXK7wVxzBpTnUesQf+"
+                "2yPm4Kea2qBSBQCAkxvDX5aJBoX7Gx1wXsGAGmoqWK4gAYZnTPs9b9bsY6+E2z6S8I9+p0W/bvGhHLUxSUCf37LswwV8ug/bHbyi"
+                "AQ+VcCYAwlOsM7DDAcADBThgKgAKGw18ewrvLqGj53+Ok6duRByy8LY2XOvg97rwwRJ6gHKeAyznDRnAnA/IKQ8KIFxZghL1k/bz"
+                "/+uMTB5saoMER6W6C3AOPw38DPBFAGF5tRcFQaTTgDIVXHTYaHHRJUYNoDwvMwH+qAtvnYP/MgvdCC3DUylsdrAvg8UId/dg0Z+/"
+                "xs8EtliwAAoACgRAgF6Edy/Cr8/C5/owYOAbmvCOEXh7CzbwZHUDdXnyPoYzHooICZByhSmQ4vG8P/nQF+bM4q8kJPupVGcAX2ZC"
+                "FEQhWPDmiX8XloGLwq2f13026l07HqWrxmHVgOJE5XJvc4OyJABzCkc8/GoXbk3gcHhq2uoCtySQCgjw/W14dQt2WUBAFRoGzJd9"
+                "zwYLIhAivD+Hu3rwvgK+p4C3tmGjg3/cgiED/24BTisoMCowcsF6w5914L055Ao7LWz+sucBkOeRYwVadGWKT7jPfHRGZn9CVT8v"
+                "iFKpAvB0VMBESAsBQIU8CoHnRZ72gZxNJ+J13sbxkbMcQSw2GgAjl7PeYIFhAcuSCCQCCByNcKrgqRRudvBiBwCJwE0p3MR5GbDD"
+                "gfuyz8YMCKDA2Qgn/34KOBPgFXXYk8CohdfW4D1dOOshAE2zNACBpY1IH80BBWPhJgse2Gjg5Smc0HP/Xbg0BmgwJafK+5Iv/sVx"
+                "c/r36rF2r8dTqS4BnpYt4ex45JE9nqNbwv+ew1tDMdeOOSiXa2Y4fObseHi0X1PlAtHo1ii6WaLigiIIooIgXBqFmsCuBBKWNAQG"
+                "hCUCJUvzJArfWIPrEygVDpTw7g785jy8vwfdCHWBG1MwwhNSgbY5H42aOR+5hyM8WkJQAOgq1OTJTxkOWQDoKdwXWGIhKnyhhCHg"
+                "h+rw2214Q3aJMRTAUJBz0hw/fG/y6d972B58+4A27+JiKlUAskI4dE3g716V85GXLs1dr8o5uTH0eR7uv97/xidfXP78yQ3xiyo8"
+                "Ic11Z63Hlmgt3YZDiSgBvZyHXzKBve78qv8mC3sSLmqvg2+ow6iDboT3duC7Z+CfzcCvzcPDBSCwwcGQOZ/8usBmCwA1A1stpBf8"
+                "HsdL6CoATEZ4wIMClqXfaZ0FBSY8jAMNAw2gZWCLg39Ygx9vw7iDU4FLoSg5fT8r88c/kH7g3z9kD/74iA4+rCiVKgDP6fQ/KQXn"
+                "lyYrhDzVIqLPY4+BfOfj8+F+qr8w34osUYbmZYfTZOuxPaM88uKdROewUbj0SwA9f78/EQAYMbDR8vQUrMBvD8HXZOf3AlybQmIA"
+                "C9MRToTzB/xrExg0QISWhb3J+SC8IYUXJQCgCpMRCgWAQx4eCxCBLRZucOev/+civCGBbz83P5DCf2zBLwzBiIUHSjjiLyGGjo4s"
+                "8kX30LEo4WvqWn9XgkNRnlWlWgNISuHlH0150ecSTASAaGBgkdmZ4cjozOU9mNJc5IWzQ+w+eo2+v9eKv/Oiz5kfAxiZMdJeMMMn"
+                "thl8YogSUYnESzoDUNjh4EdqMGR5QtMuPZn3p134YoTIOQrrDfyLJtyZnc+4FXhxBq928IESBEhY4gTeUIP/L4fcwDcmYAxPuLMG"
+                "Ly3gE3OAgwhYlkxEUJa8PIVdF6w33JDCTw9D0PM/pylPXiOIXAJDic9PmDOPzMrC7LwseoM8EQAFFKXEk1M8OQyVKgBFCmkh1HsC"
+                "whKFxZYe6rSYGJ1h/HLeEtTsyAaJcVuvwT1To/Kfv3Bj2b/pQfcTNhiaHW6u9cO+rO8fingQH1Qiz53CzQn8yAAYnmybgW+twYM9"
+                "KJQnpALbDXQCuAta0xb4pw34xAI0DGywAGCBO2owtAB7LfxoiydpGPihBnwhh7s9JMITAkAAI0tbkncnACDnT/2f0ZCBmnApFLSg"
+                "7HuZT1raRLRJQoJRQ4JgMeyMW9nEOgxCpQoAAN26og3l6fQzvWt02nwd8EbOmRj19y+0dHpo3lwzMmO2cxFDc8bW8jgcJVIkHDy6"
+                "Lf6CUfr7Hkl+dGSaV4xPhDc0F+NDqoFoygCRS1ICB0uYV5hTOBTgTITpACef5o+bUfjvPbi7hJYBYYkAFuhHuK0Ge9Mnbxf+P1qw"
+                "4OHeAo5FmFdQlnQilAIKTAcILHlFBj/YhhDhsIf/0gGvPK0RgestlIADPlfAY4FLJBaTGoQBbQKgRJQlDlgXx7BqUJQllSoADeWZ"
+                "9Gv6QLehnwkmvtFGAeDQdv+hQ9vDH193IH3TyIz9V6A8k2bf0uqGbag2JMZuEmThoWvDzzZ6Zri9wFvb8/rCoB5v+3jtdaIJCkZ4"
+                "TgQ+X8JPzp57si7CI4HzBBDOE1hU+EAB5Dytmx18Sx2swGQ4f0r/lhr8eQd+cgY+FwB96s+xAh8/93jwywy8JFuaYwX818XHpwez"
+                "gadSMHbp8qKvkAIHIxy+tAVRRX1JOWsxMRCeuZjCeZUqADbwjLIcunWdnG1rHJ0VA5CUsqnZkQeTguFo+FcmclFZX25odGVfWshn"
+                "g4VWR3j4uvAbw7OaSDScHfaydWpBY1w446XIQWo8JwKnIrwvXuL6rDzzy0O/rwGpwnsW4TEPucKAgbbA/R6m5Jl/RgA+5uGdXWgC"
+                "16QAUAp8VwPOKPxRDwrhKSLw157LJwSJiwuyeL/FeUF4TipVAEanDc9EBYLVk5Pj8cTorNkKYGDdhrN2LO1Rnlzn2XLacjGirHMF"
+                "G9IcABZb4CKHFpv8+yKTQVtos7T5opf+RDBhEaTGihB4ewdcBwIQv2xDXgAK5eIE/qgPf9oHKwCggCr0gEJYHgbQ+UXT+4TDls85"
+                "AJUqACZyUdHIh4tU/0Oe6e9luZCWMrbQ0uHTm/RYe5GHt5zmOi6i3mFfWnJjp6XvMxFUQILE4DgeDKeMKHlaUGr+UDDxDMgYK6Wj"
+                "gD7DYqfwnOS6NE8hLA9LV+Y4bI5PROJnAlIKz1GlCoCKcDE2MNuv8fGjW8LUnoNuNM3ZWu/L1jLhA90GvzI3EH9/oCOYKDyVMjpr"
+                "G7NTet3DY560FFBwCgCiBIA8KcglvzfYcBS4gRUlV+DAFa4OBRrMycniUfvY59ra6gjCpahULwW9KBPBOyZnhvXX+jX9pdFp0yqT"
+                "OD41or0y0T89uCN+1y0PJF8HGJ5GLTeMzJoban25/fH5lAJJgCJTYt2As5SupJTyWDfpnAjSx6oASuXi234hZU4m2W8P3bUovXcP"
+                "aJNLUqkCUDqenXAa+I9HtobX7jloX3Z6Q9wyMR6Ses/kZzbwc9MndfvItOy1kaeV5bJveEZ+QFQ+BSAKwUFSeNKFLi5vkKDktjvd"
+                "SWZoF6NA4MtVDACegkJK+jD3kLv/wUP22O80tP7xSOSSVKoAzLYjz0YAFczEKD/YXpD3R8OtLrBZ0MPOyyce2Fe+56YHkh8cmbGj"
+                "osqXq/VotefkurMbsQgBhegsQ2dmWX/gCNFtBaA0RXcxnaddjPFUlUiIkeBnZd4ftsdmvmAfeU9Tsl9r68DReToIwiWpVM8CyHMY"
+                "AFGiDTz26N74H0+vj590pQwrS5yXXz6+0X9gbiAAwpMp9dyw9bTb5R1vUaEJgApqIv2kT+56S5N0F4MtczBcqCJAxmfrn//YB1v3"
+                "vDHTbB9wh0F+DuQ4lSoAV4MoIc/4E+94J8pjF3w+G438/ORIeNfs4FMjIAqNrlm/8aT5CVeSKoooBAn0a1362dL0su5k6YqzIFyo"
+                "UmNq46MPHR1/9L/0NP9bQY4KclyQGYFIpQrA1WIic6KcAOa4gA3s945fnBoOvz8x6p8SAedxO47YF0rklaWljgqBgoXsDIu1uf89"
+                "C7XZT5UuvxccFQBBRXW6fqI/OXr0/8rrnfeZ4KLFsupUawAV53m0dPyLkxuDiVZeNjZldtkAAKLQ6ggjU/LjjPJQdPpwdHV8az2h"
+                "OAMCeVI81E0WP16azpuTSAVBUSYbx4vYcx/emG9eSG2Lnusg0aAiqAiooICywqoAVFxgrlB56xdvKN963X73trFJsy8tpG0jAOw6"
+                "7F5lJbxqcswfFTfWdQOvJJ/7IFLMYXD0XOfwRPNIuWnhmgQAlK9eCkAW6llnLgxtkga0IscbBykWhcQoRgKiHocirBJVACr1vvzB"
+                "/Tf6PxmYk5/fs9/+8w2T1p77nKSUn4yik2j5PwGyoVeTnb4P25mmdDI13Tr76OMBuIEKoiLt/kh2eP3+ZLo+gYspAAzDIAoUAAyy"
+                "ulQBqGg0dJznl09uDH94YG/4+o2nzL/beNq0dj5md7hSfmz/bj9d75u7FEugQ7ALFEkyXQvZQTA3QKwCANRChmBskIAlggDwZW9Q"
+                "ElaVKgAVUTCRySJlcnZQjw7O6oOi0j4zHt/SbcRvbi3w7bOD4S6jAd18Hen0o0jvxCFvWu8sTPeNacz46qaAkPkB0pBtNhhjsRFl"
+                "7agCUDERnGfWRt5vA8wMxwfPjIf7TNRTRRKdUXxobaQ2P0OzN9cxYj9zqn10ZvP8NUMuZgKRr2ZGM2y0GySamkTTZa2qAlBRgbTk"
+                "S/2a/v2QFJICED1KQKLFp744OXT4PRsWt36ni6ZZXQpERKVu1NSMrv0AVAGoYCLYAECBQFJ4Aj0WarMUmZly0f7f3pTfmEGTCoKp"
+                "WVxiMHxFqQJQidax7sDDbDnRolO7jsfqD5So+8JU48xC5mu4WAMCX70UwdRETSpqWbOqAFRSX8NpBFsSEnC+ZNPDh7DdBaIZY6A/"
+                "wtapPeQ2L2ezqdMjbnxfq6hz9QjgAAvEcxMAZSWJUhclFWWtqAJQUQwpiAMDRuDhDZ9j1i0gk4YsUZJcaMwJpQPvlKxvaeRtYjoX"
+                "p1qn/3hjZ9uuVrFuG3iWn+DFM9k8dmimcfYzzXzwG9r94cGBYhCrbmUjoKQoDmW1qAJQETApIoJBMAoABhBRxFh69hSmO4mZT5hH"
+                "mRp5AA0dknlHQsTFlGj34K3epoSbggmmsHnXu6KTxHSbjZarJ2O6dmry0dH739mpz/2Pkc76j020Tt25d/LGrxvIx4ehZMWopII4"
+                "QVh5VQAqYkAD5GcJJeQIYgEgVwilYnsZnfggtr8fyWtMW3A+AwbAKioRDYmJEq9tFq1fqpetr8t8jaZp4bBT6xa2tJt5OwHP1VCa"
+                "nDPN4389n8784UDZfsyoeXi6depwf3bXTQO5GWYFCdIwajOjllWgCkDFQDEFZz9MX5WeEUhZEkHmwcwrBgtuCADLOSjnoMKYUfMn"
+                "10xfd2PqB4CS0d4GgFEAiEBgeQkAp5oH/Hw6+94s1B8DxZsireetO110Y6CsJIM0RaUmKqysShUAmyGdQ8jUp1AREHnKi3RVnv2v"
+                "EQsSJI31a3dMXb8t9XWghBV7rs0x3Tj7vk4690ijHKDhG6ioeFOuN2oarDCJJhFvrYmGK6ZSBUBtjUtjUJfiNKXeTcA1uFzelBuS"
+                "kL0p81kdBIhcfUIQz5nGsaLjFt+hwoHUZwz2R/Hipe+6m0RtBsrKUay6oUSTptWEK6ZSBSCdvI9LYVQQMZhiAXUJaiKXQyWS+HR8"
+                "dHH9WwALkZXhEHx5dPDAB3OXf86GtJ8nfaaTM6BSjC6uW5/5zEBkJVl1Y4mmA48PV0ylCoCbeYBLoaIYBTWWfpaAKpfD2zIdLtfd"
+                "uHFuxxbBsDKEKCWz2cxsJ1n4bRWdN2LoJx0WsmmT+GTTrqnrBtNQZ8UDEO1gGtKGiwlXTKUKgJUBLpkACngum6I7ar75zQPFOqC/"
+                "Ytf9PTdTHm0f/LyL7n1RFE1LjIWkTOsuJq9qFYMNIQFKVpILSS0NaXpFA1CpAtDqDbESvClvqufNV4Bn5Rh6bvHImYGj70xi5hR8"
+                "Ehw2pASJAy4mL1E0A2VlKYmmJvP1mlXHFVOpAjDdnORqC8Yz0B0ebvUGN4CyMgQwHB187OhfXPv/vLdRtnzXdXnFsW/gpokX000W"
+                "WjYmN4uadDUEII0pLT+QJCHjigWpUgWgcH2utjzps2numu2jvW0ruPiX0HXTxWNDj95/qnWiUy8bTNenuP3UyxnIB4kSMxvtFlFx"
+                "rDilWbaYbJ6WycYZXHSsZuu5vQrAWtHuDXO1dcPiS9v99ivS0AQ6rJQzraMf7mQLf3TbqZdh1TLYG+H6iVuwIaFRtKyibcCw4pS6"
+                "H8Sbcvj0wHHJfE25EipVAFxwXE0qylBn9PW1onkblKwMQ27nOdM6+SGH+8wLzr4ERdkzvQ8XLVOt07iYSKs/2DAYQFlpojVqZWN7"
+                "4tN1qc/OcCVUqgBMtc5yNQVTsm1q76ZWMZhBZGUYpupnQ89152tlHS8eNYED676ExeBNSas/lKxb3LyKtt5GRM1W55O9j8+VCUCl"
+                "CoBRw9UUENr9oVazaLFyARAW0/mTzruzm2e2E22k05pGJQKCSCDztXXt3ogYtUBk5Sk22vHU1zYnIeOKqFQBaBYDXEWmn3Rf3ywH"
+                "roUMKFgZll7S/dB8bfZztVBHUQSDqHAuioNW7XVprAEKKCtPMWoGk5iMXbFFwEoVgMLmXA0KCKKDndHvrBfNXawIQYnkdp5e0rm7"
+                "cPlhFcUgNMsGTwhm3Pn0RhBAWS2M2nbqa8MN3+SKqFQB6Ls+V4NKRNSanYv7bqmXzRp4VoYy2ThZ2GCPjHbXe6MGAawYzsFKuT7x"
+                "tetBWT0iWag1XUzG5tM5DMLzVqkCYKPlalARY9RuGumNN5NYBwIrQtDp2tQpG5JiuGyiogCEpOAcnEmG0pBew6oSGSjaJgvZ2NGh"
+                "AyQx4XmrVAGo+xpXQ5TYMGpfXfP1BpgVCoCgoKXJj3aTxY5Vh6JYtQyUbQyCAtH4RuqzYVYVpe5bDBUjg1Zt4mJS8nxVqgAM9Iav"
+                "VgCGBN4sKgOgrCD1tjzjbdHTGIkSkZgyUA5gokFFiRLrNd9IQQFldYhAjXrZ3JqF2ivSkN0NRJ6PShWAxdrc1Tj4SXxmN85vfYld"
+                "4ZdrCKKlKx7Jk3zOxUCUgJSGZj6Iiw5FKWxhDYbVR3HRbWoUrVclMfkgz1ulWgRMeiw3b8t0MCQ3bZy/ZtzGBIislChBC5N/trD5"
+                "dJSAosRkkYPrHsCooTQFQ70xts3sZvWJWHXDrWLoxrqvCwoIl69SBSArayw3E83mmm+8sVEOAWGFAiAogcVkvixs/6FS8iKKR0QI"
+                "CRxr70eB3PXYOXl9du3Zm1mNXExtzdfHu0knqiiiPA+Vag0gH2S5labcViubd4Jn5QhBPHPpbL9eNuZNNNhoCYknzzpkZR0AUaj5"
+                "ettoAkRWl0gaMuq+0T449mAaJfRFDZetUgUg8SnLSQFjbCPztTFWlBBMoDR5b9vcbgNgo2O+Mc3R7BFsdOffVOyzJmRAb/UFINZY"
+                "11s/6EKyJxh5wKiJXK5KFYCJ9mmWU7Cege5wY+Pc9lFW9KJVUInaT/I5UYIgmOgoTUkSM0w0ACTRr7dq14Oy+iggJCFtNYvWtwTj"
+                "Txg101yuShWA0hUsp9zmjIaNG0a7mwwAKCtF0Vja/iIqKghiSoLxOJ9iVAAIJmyW6Lawihm1zXZ/6PU2uj82aqcRLk+lCkBaZiwn"
+                "he2NsnFbEptAn5WkosHbcuFcAECFKBEXHKICgBU3YqIZYdWKWHXJSG/9jWeax9PC5Zf/RGelCkCr32Y5pb74mqys3wnKKhCDhB5I"
+                "FAQEQElCAggAMYQhq3YYdPUGIFpG+mPN/aP312br0yQh4TJVqgAMsZxKU1xTK+s7IbKyBAUUVS4gKiShzjkoMurUjYKyWglCsxwg"
+                "C7W9qc8eSC53W3ClCkCtrLOcnEmaSUgFlNVGUYxakpigKABKrJtg66xqglNHo2x+W2Hy+11MHuJyVKoAHB95bDl3ALJufnNSn28B"
+                "kVVCuZCCUfNEAEw0NVGpgbLaDfXGvnE2nf6D+WzuIauWS1apAtBLOyyX3PWz7X7vuoYfAQIrSxHEWDU1VEQQFCVRhwvpEwFAqZno"
+                "HKuaArBxcevQmdaJ0Wk3SRYyLlmlCkDqM5aLSryp5hu7jWZAh1XAuOiaqJhzAcCpI/XZEwGwxmQuOtaClh9loBy8PQu1u7NQP8Wl"
+                "qlQBqBdNlouN7uU22l3gWQ2MinEhGzDRGMGgqjgc7oI1AIMkVi2grH6Ghm++pp0PfagWGn8OyiWqVHcBBlkupS2uT3y6SnbVKaLG"
+                "ZGV9KBovKoCAiUuLgBEFIChW1KyRAERqZX17K2/vNGoQLlGlCsBgb2Q5dxluSHxmV81rtdWShaz+6Ogj0nd9ovGMdzYxfuaFeFMi"
+                "gDfWrJ0FNc94d2O9ky5uOt56jERTLkmlCsDhdQ+zHKKJbJ/Y26j7BqsmANHRLoeaKrHlbYGNlunmGT65529AlcLm7Jq4wew5e9Pa"
+                "OQPwg9IomreXtrjTBPNRVl4VgOqNQEqwIU1CVktixqq5BMDSKtouCdmoDX2SkJFnXaYHTmHU0Eu6bJ3ZbZOQsnYYslC7pZkPvq7h"
+                "W5cWgEoVABsSrjw1qNm09AJQB5SsFi46RO24UetEjU98xkB/CFHBhZRm3k6FFAisDYFa2RwY7o/d2HddBOE5q1QBcCHlytNENNzk"
+                "YtICw2qiophotpnoBkw0MzakJHkbFGxIpFm0apACXdaGQNO3GCyGN5xqHRmz6qYFIs9FpQpA5uvL0xXjXyRIG5TVRUwSk+sfn0EX"
+                "0xk1JV5KQEDUqagDZe2IuNhgqD9yjY3uBwX5LaDDc1GpAiBRWAZGMC1BLCirjEi0Ayaa9PHBK+Q2R1TIXb8MEgoQ1pZIGrKxsd6G"
+                "bz/RPvp7pSk6Rg3PqlIFIA3p8nRFwwZRyViFrNoRpy516iB6bHTn1gASjBrPmhNJY2Y2LW695tjg4TRKxGBQnlWlWgNIWAYmRjMi"
+                "ahJWIad2xIUke3yIrkSJgKAo3pQCnrUlYtQxlI80mkXrrTP1yXcUpj8parioShUAEy3LQqgDhtVHTHRtE5PExYQCIU96mGgokj79"
+                "pBegBARQ1hIXk2Tb3M4fX8hm/2Y+m5l0MeGiKlUABGEZiCAOEFBWGUlCOphJSJOQEosG7f4QqCHzOSaaXmlyklhbYwFQQMz2+T0b"
+                "jw8eurmbLD6YhqzHCqkCUFFWHUUQaqE+JphMFBq9dWxZuAYFBPDifSddYKhfZ21RBMFpxmhv/Q8peiiJ6Ye4uEoVAGF5iACyGhsw"
+                "3B9NHh67L51uTmBjQs3X2Dq/ExMthc37WagDBgisPcpA3n5hkLDbBXfxAFSqAHhTsgw0SlhE8CDpajsDaOfDIAz2XAcXU4IpWcjm"
+                "MGoobD7V9K0eSJ01San7ZhpzHbZquKhKFYDS5SyDGEw4E4k5kLJqWMAwn01RmtJbddhoERW62QKC0Hf9h0b6Y4+CuYVVTS4Yc8Fn"
+                "Cb2k05mtT5591kXAShWAPOlx5akPJnxRRb8BzABXhQUCIIDlqQxKwWz9zNzZxqkPFTZ/0KhBAIzSSxcByJP+5/qu9zGIKxgAAewz"
+                "3IkQQFFKSlvgxROMJxK9mtgrbTg00Tz9gbnazL0uOi6qUgWgsH2uPC2CCR8KpvwB0I1cBYXrFi4kU1FCmbs8NdFwDoIld51wqnl8"
+                "frJx5u7R3roft+pUARHBGCjoA+BNfrKTLXym72ap+ZV4makQxVPa7lyQMG/UNC6ogCoSo/Fh0S0WUULoJIvznXR+Njd5p0z6p6Yb"
+                "Z9/VLAY/WisbqERWQBWA6jageFG9r5MszgxJH1G3jAeSQcXH+zfe+6nrzr7gn05nkwc+u+njN9V8vQQwiK35Ol9c9+nTRwb3n/yO"
+                "L70tihp9ptuhNjoWs9mZU+1j8zumr29f/f0Ajpn6aR4cu++/PB6r32gVg68BVaAEChWd97Y4rcQT1595UZmGTPvR4QiqMdE0ZME8"
+                "1zcaVaoA1HyT5aHx2OiBj7XKgRcOdbfXoQsoV44ABnCIOtNPun/12W0feTRGXTRq7vWmVACDiDcJhc197vo8F0bt3cGEt81lk+8e"
+                "zMcAA/irFALB2yLkSXemMMWEN/69oIAqEFU0eFOWivK8VaoAWLUsl8IW7zg88mhjswk/Nr64BUi4MgzQo5PMMt+YLmbqU/8jd/0/"
+                "7ae9LsFgfeIFBcAgGDVYtdjouJAoKEIU4QlqyV0+f2Lo8HsmWqd+duP8lh8f7o6vG+yPAg3AAwVXngAJ0KSXdh4MafG5Qd9GVDoX"
+                "noUoilHDFQlApQqAosv5oNGBxWzuPx8deejkXH1ii40uMWp4vqKo5K5XilIGE44cGTnwl1btgcSnRFU88XnsWLIUtqSbTBWi/KJV"
+                "Od0omvsmG8WmXta9udVvbx/ubWw++dJAn+e+CwN4Zusni8Va76NnB078vsV82mlGjqdSBWDNxqXuGwe76cIvPX6QEo3HhgTB8Hx4"
+                "W6AmsHl6FxvmtpH5GsF4rgxFVHDRYaLRJKT/LfN1Tg4eqR8cf+Dbxue3fPO1E/JKG5OWoA4VK4gFRFTM0xRBAFVRBRQ0KiiiQVGP"
+                "EBWj3vb7j408eN/E4MmfMcF+thbqBCJrXhWAKgJGLZmvoxLOBUB4Pnx0SzGJDkWvSsiSkPaSmP75QmP6+Jc2fupo6rO9NrrBx6fx"
+                "+NRFTWqiSQR5UgAUFQSNEn0kFip/P1oG63tR/EI0sauiIUqcyZPuR5KQPmqiQdH/fzt1UAQACMMArMO/5yKCD3dLRCR/YtpmJ+Dk"
+                "BSAAQACAAAABAAIABAAIABAAIABAAIAAAAEAAgAEAAgAEAAgAEAAgAAAAQACAAQACAAQACAAQACAAIALbr9pUzc/FtwAAAAASUVO"
+                "RK5CYII=")
+
 FAKE_HOUSE = str("iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAABMl0lEQVR4Xuzde4xc133Y8e859zF3Hjuzs0/u8i1aokmKlCw5imx"
                  "XlWs0aeokDtD4oaSpg7qAakcwnMJwUPiB1AHSoP4jqG2oqOsEjl27iu22cYIiBtI2jeu6qdK4qeL6JUuiSIoUyV3uzM773nvO+d"
                  "UoasSinhTE5Qz1+wALLOYCAyyw5zs//DB3xogIL09KKcvVopTSACilNABKKQ2AUkoDoJTSACilNABKKQ2AUkoDoJTSACilNABKK"
@@ -337,6 +542,7 @@ FAKE_HOUSE = str("iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAABMl0lEQVR4Xuzde4
                  "I88epVOZs6OgHQobQPg1XAE+MlRoXs30IbBYzuJO/eQyFNaFi44sQrcaOv5kDXjzFWvIzIzbB69kusnf08Xui+wHJF9wCPfv0oh"
                  "f+/PTsoAAAAgRh02r+z9lAIsc9yFTUP6g24AIAAAAIACAAIACAAgAAAAgAIACAAgAAAAgAIACAAgAAAAgAIACAAgAAAAgAIACAA"
                  "gAAAAgAIACAAgAAAAgAIACAAgAAAAgAIACAAgAAAAgAIACAAgAAAAgAsHGAm891kKiMAAAAASUVORK5CYII=")
+
 FAKE_DECORE = str("iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAABJeElEQVR4XuzUQREAEBQFwMeIILpcKn0lXIzdENuqKn8Ceu"
                   "4BBAAIABAAIABAAIAAAAEAAgAEAAgAEAAgAEAAgAAAAQACAAQACAAQACAAQACAAAABAAIABACMPGTPlZ8d9u4Dyo7jvPP2"
                   "763q7ptn7uTBIJMgAQLMSQxiVqAkK1hWsC1bluS15LDyamV5HTY5yGEt73679tqWbMuyLVuOkmzFQMVAMUjMOSHHweSbu7"
@@ -606,258 +812,10 @@ FAKE_DECORE = str("iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAABJeElEQVR4XuzUQ
                   "ZyhAAMTWAHMC8w+OpI5xRcATEBAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQAEABAAQAAAAQ"
                   "AEABAAQAAAAQAEABAAQAAAAQAEAFhK0Bk2qwYZeAAAAABJRU5ErkJggg==")
 
-FAKE = {"Pony": "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAABED0lEQVR4XuzUwREAEBAEsGV8VK8EpZ4mvEiKSKuq/AnouQcQACAA"
-                "QACAAAABAAIABAAIABAAIABAAIAAAAEAAgAEAAgAEAAgAEAAgAAAAQACAAQACAAQADDykD1XXnHY+/NoTa6zsPf/Pnvvqnqn8565"
-                "50E9Sq3Rsi1ZYHkEgw22McSYIRB+hoDhAhmBJAQMIeESphCm5HKdRbDh4hsCBnNjsAHJtjzKo2xZY3er5/HMwztU1d77+YmcXuqW"
-                "JbXUrT59zrHro/Wso/VqnT5Hf9R3Ve3aVR2J1LXGWBxmUNsIQp+cGZnjmDuFxXBbeTOfTe7ner+XRbqcMRNsD5v4YvIwG8N6XuRv"
-                "4oyZ5H73MC/0N3JzuI6/Se/hmDnFdeUuBmjy8fRzGDWkmuCw1MhoxDpNrdPQBuNxhDN2Sj6YfNwumEXxeLbFzfZDySfjMXOy+OPZ"
-                "3+KEOU1WqyEt93rvwj+J3i9M1ubfcevUdffkJu8ea55hMenhTWD7wgZOtCZY3x1hoGxwZOAk1yxs5kj7DN3uaZrj19G+5nbSqXms"
-                "h7QQnBesBxN5KoHgoHRKnilFBtGCd1AmkVvvS+lnyqEdnrQQ9jzqOLo9cGYjmKBsOSY0O8JD+zwuWpwXBEEFglFe87fXVAH4ylMR"
-                "BEXpSBfB7M1INjrcSCRuFpHNFjPq1A0tSrfR1mb6uuKVblSHHVh6dOK+cnfsSx460uv36E8ULuR7ujtuHi/WvwAtQmnidSXF9Ex9"
-                "7lDfFh/r2fxub8J+RVkBlSoAFUHoS2470n354/PiwTiw/jX5y4ZT0s1WTVuQpsMOO9xgoq7lcCZRR0ZKQxs4BgADLLAv7MYgTMgM"
-                "63QUeuLX+VFXi20gAnJ9bhZx6u5cX4zeWRj/ptwWR+bs4tFF1/3DEdM+JgjLpFIFoCIIgUAu+Q2ecFNBme3xO3aMmpGvH48jd6yL"
-                "o3a9bgYc5+lFpssSi8UBsE43AAYKdeCBPiAAZLHGurwJudkBsgNKjjaOYyXZ1SiTj3Vc92Bp/Ie5cipVACqB6CJxs8e3m9rYtilu"
-                "fGtbW/8gorzA3wo4wAMRKIGCSxM5L/BkwnkRiJwnbOtufXx2f3/fTH3/Q4OHHxzNB/+NogeDxIOK9rkslSoAFQEsUEtJbk5wP5NL"
-                "8Zpr4w73wvxWwAMKFEuzIhTwgKcWa9w6c8P1Xor3PtQ+OGHVfL/BfADwgPLcVKoAVATB40cXzeKPZD771n/Yf9OGjNqIU+sSHBBY"
-                "nSJOLdct7Bjf1dn7+591H/yDExt6v9GGUzy7ShWASke6m6dl7kev97tfdku4ec+g1tcP6jBLIqBAZHVSAJKYkcR0fEN953fPNuVI"
-                "N/N3keorrWFIlGGFZoTURhygX9a+6B1FmWinSPVsnnI2Oqa9Y6JI9TEVzgpfIaoAVAShxNOTIguEf/Wy4iU3Dcfhb7ombm442kAO"
-                "eNaWCPTZVGzcXD8qP1pOhtclveRGibRsoGWiZCaCKE8lEA1Eo4W3zEbLvBoWomEuGD2TFnJkoanTRaqfE+UeIGctqgJQEYSe9AdH"
-                "dPDW8TD+tet07N/tCLsBB/SBRUBYq5p5jeYp9kHcB45LlALrlua8IlXyVNl0yn3aBv48Gr4ULNPe8UmnhCoAa0YlENYZMd91q7/p"
-                "p2/2L1kHi1+2qCesbZHzlCshLWDjWfv4uNtAb5sYDjS6crA9z094q5+LhkmgWz0LsOpV+vT/00vKF/ynm/yN4zALeJ6rigIwPmO5"
-                "4eFk50s/6v5s40nz12XCt7CaVQGoKEpO8VcvjDe9aXPcYoQgXLaKKJIEMXsec9ftfsz9ei/jf+apDqhUlwCrTnV7L2yIxN+9Lux6"
-                "3biOAQYIPH+VtBDz+GyUyLcNdkzroX3xN4uU99dyUKnOAFZQRRByybcmuH+zPW7/tnFdD8gyHPyV9qI1m0+61+7db3+u0ZW39DPN"
-                "RKszgBVUKSlHRnTordfEa/7J5rgN6HFlVEqnqIACLoCNALDtqL3DeX7+4M7o+nX+P5SFKgBriCB8JVCUKPpN+8rd37sn3AAscPkq"
-                "3lIEp91oKLo1jUG05ByfqBgRNzxtEkHdhtNmnwo/+6UbQ24C7wP6VQDWiJqmfCXwBLaFTa9aH8d3Qp/noyIcuqb8xMGd4XeLTD9m"
-                "fQy3fi7t1vqi9b7w0ZeW/K9v7mdv+OvaLutl78i0/HCjL7eOTvK9s0N44L1VANYIi2GtU7CF9H5ge9zyqhFdb8Dz/FRKp0MmMJHm"
-                "nOzWFVdCWoDzUDroNHWxSJhxwgMg904Ox6Ej20JfxE6wdlQBmJUF1jIFBAnr4ui3j8Xh7RbH8w1ARdly0u0yMfzokW3B18rko0d3"
-                "goqy64BQ74ILYCLRRDo2sL9IlYUBJSuUNaQKwDwd1rJINA63+ZX+jr1NHTBQ8PxV2gum5Txv7tcpT2yVz57eqD2fQJbD5LhSWuVC"
-                "JoJdisJaUgVgQJusZV582+HeskU3DSbUuFIBqCiNnnDtAfvq6dHwHSq8C4jTo5GFQWHLCQsC1UagNW6djrKWqepYRvYPldiEyJVV"
-                "SXLWX/sgv3JiS/w7bzkpEG/8kuGGB+vMDkViFYC17TF7hLWqxDOsg7U7i9v2JerclQ9AxQVhfMYNHt9a/JJafk4CjwULAgwsGDoN"
-                "BQHRKgBrUkHJWpVLAUp7vY7VLA5QrrxKUpJuPmHedHq9/sc8AxNBAROg3oXcCd36Go1AdRvQslYZjKSarBvUIQxmmQJQEYX1Z21r"
-                "ejj8QLehv+s8B1U4FweDiuAdqEA0VQDWlIyEtUrRVkq6w5ECgeVTSYLQ6PKPZ4f03n6Ng0Y5RzEBTIRmR7CRtaXaCVhnrRLsSEa2"
-                "EyLLrzI6ZQamRvzmsxuiJKUoT1BMFEanBdAqAGuJw7FWBWLdYke4KirDC5bheXvtmQ1x0ERmeYIAa/L0vwqAqq7l313QaLlqKmlh"
-                "XtnqmNelubybta8KAKKsXeqBPldJRan3ZOe60/b2ek/erVIFYM3LyVmr+qaYK0J5BK7MtWfl2a/hm4u4uZaMTo8GTJQqAGtdT9Zw"
-                "AMhn+hQPKwFBuHyVPGN+scXMwALb04JnVM8FrCZHr/EkhfB0XlQFYO0IElmrolAW4k91ZJGWtrjcM4GKYWq4+6X793b+n1sfHP9n"
-                "7Y5uSHMdMJGnsFFo9GXAlZKlheTVW4FXTMUAXvzMGZmMHg8Il6OSEXsnenL2Q//DKDfff0v2e5PjZgGUpxKSwmxISnO784anmzWk"
-                "OgPY4bewVqkooqZ30B49sEU37XZqDEQuVcUz3Bm7fcvEht852Pir74r2db/84AuG3jlxYvbtex4J356WhgtJpO1KdjjPR1jbqgBM"
-                "mGnWLsGLP3laJt7+Yn/zOzIaA5dzGVDxNPzwwKbFXa/5dPt9d9bOfOCj8yNfP1kfGvn5Xu3sofm2/amxKcs5iNJOcrYnJWtdFYCz"
-                "Zoq1LKCLCfZPvuAe/PGXlre9NKUNdAHhmZlzE4FIRREcTT/cHMq3/VTXHHvYnv3kZHPh1gfVtX9heqjTFJUfHp411kQwSj31rEt8"
-                "FYBqJ+AKsygGw8P24DtGdbixJ1x3a10zwAPKeXJuIJceBSWZpqRkQKTisdHVts3d9Pr9m+JeO//wbLFY+MXsto7z2Y+dGY/Oeb6r"
-                "vWDbJuIsklmE1aBaBKxoS5vv/LT7wq9+yd3/hVx8x1NoIBDPTaCkJI+5dPunzcTZh8yBg2fN5JRiqAAoRh3rO5skLd3rLQPjU83T"
-                "HG7fS3AWE/nh0+vje3u1WLqAAaTaCbiqVAbjwHu+4B6460v24e++zu/+hQ1xfCAlIRCZlwVO2bOHp2X2A7eEfb86oM3ZrvT/9YLM"
-                "/lRb20CkAhDJisbL6lL+hSv1lG8OcHiHgip5pr/cXjBbR2fklc6bpqsuAda+Mu/wTBRAIBpAQDlPFIRzXyN4BwDWg4iQpHVAuJoM"
-                "kheUZ6P031lQfNwTUouRQKSkDH363a70Jq3a4w+ZR3lEDv7nm2Vf7Rv9a/4JACig1X7/snZdK8hwLRe66RBz9Qxb9EB46MTG+NF+"
-                "xiubXTagVQDWvJ03fCNPS0Ci4kpIc0hKkAhGQYHgoHRQpkq/Iaw7LRiF6XGhpz1OHPgYueZYNSQkuKSGqrKcFDAYDDJjMJ8Szv9j"
-                "MFgsDksSYDKc5rA8dqqg+1sOXXc7t715gAH31X0XQQEY7Y6PnBg80phqz6PSwZ3poQO7cZrG6eH4V90GW9NSZ1n7qgBs2nUHT0vA"
-                "eqXeVVoLQr0LxisuClEgz6BfU7otZWZEuLFncAH2XwML0sUu9KjNFoRmykQ8y/T0IYxNSCRFEFaMQGe8yYbkFl6kG1DDwVOBn52c"
-                "6byuUTQGrVZXeCO9Teb4yGMbJ4fOmCy30c6exbf3IGrw1n+u05Rf7Htt8RWsugQQCF4xheK8QAATzgeg8ND3Sl4oZS70gsEG6Pc9"
-                "6oTrt38DO6NlbmPKffJFZKFLamrMhCmCekQFEUHEcFUoEAJqlbmdQ2xvXMs1IRItNen7Idc7HWOpWOWrnostsrJxo/Nu3MXsDDbF"
-                "9meI2QhiTG6D7reRZ1LdBagohe/Six3miynGs028fsv38/r2dzJkRkAE51KMcVw1RsA5jHUYHynKHr1y8e/nBvL+O7YsDAwm0QFK"
-                "JWB9cmMtb+7LyhZZL6Vx5NPY/iyYhEtSBaCiKF49oHyrvJFX7vlebr39+7h2y8vp5XOUvo9qBITlYGKODg1g77iddTe/km5TmHUL"
-                "zDR6xKLfWnekvBHFcE4lUvP1mwb6w9e1+8O088enN4qlTjTVTkvDJauoRhRliCEGshHSrMn40E5uv/Yt3Hbtm8lcg053kuBzRITn"
-                "TcHFSBZLFtYPMHPtKC6pkdQGUANRA7mLY7bUVw7PGCfKBSqNsjmEMDrTnGC+McPcwDw6cy+mcwpNBi4vAtUaQKWkxEePLwN1m7Jp"
-                "bB+CoR+7dGKHmc5Jzpx+gKZrc1kEpIyoek7vHiAxlvnxjN6Qw/VLvAEMqAhJqS8eWDD/0EUBlHMqBAb762n50xvODB+lXjRBBMl7"
-                "pFMPoEEwta2gvgrA5aoIUSN52QWUTetuIgy1mDu1n/qZDifjKURBEC5GURRDDB5VT4w5kmUU69czs28AdRZbBEwIlAlPKNPIhpP2"
-                "BevPmj2gXKgSycIgI73x24747M7Clh8VBDIHxVGY71FKDlrw9DZVAbgUFaH0PRb6XbawmRsGvoU/838KAmCeNQAGIY2DOM2ohRzd"
-                "MEa4cS9prwO552kpjeE52Tk0b3g6lYJmf+Alw53xtx0a3f9RowYAUgE9CfNHAOHpvbIKwKWrCEI/dBlNarx0x3eRp6DCcyIsGQQQ"
-                "kOneReNhor4iLcwtz7TxpxIYyIdZv7B52+MBwKjhPAfiWB5VACoCViwOkAiiPCtFWSKAQlQQnlEUttrAep5BJQIJw/3RG9Ytrv93"
-                "0fp/H1EvVBzLqqICqpEtRy1lovRTsJFnIZwngHAx3bruSErZAMrFVGcBIyM3n7r9+7606VPvLW1xXxKSKBi0CsByq4zMCJOjSqcV"
-                "ARCujGigPWc2NztkXEQlYGMm44ubt7fywX/eyRb/RWmKCW97iJoqAMurEiwsDEQm1nu8BVGuiDKBF0wl7WZXuJiKAJ4oga0ze77n"
-                "xNCh959pH/+Lvut0jNoqAMuvYiJYL6BgIleCgLYaPRmwUXg2FcWoYcP8LuZrMz96duD4MVTuqc4AroqKyrkIBMEoKM+bAV6YFmbk"
-                "Uu4AVAqumdpz+2x98sWPjT14T81bAFCQKgDLpRINNLuGLBcWmhFRnjeFDaI0uAQVJQ0tu31m1780UJbG/3Y0gV7SJRIBqQKwPCo2"
-                "QFIKouC88DyJChtEqXOJKpGxxW2bouiPHxk5cCrzyZ+WpiRIQKoALJdKNGADtOcN/ZqiAqJcNhNoAwmXqBKxMWW4s2FPJ1v4mbOt"
-                "E6eiiZ9UNLBcqgBUokBaCI2OcLLuUfP8AhCNdgHPZajk1PwAuyauv6Ww+a+fdad+JEi4XxBfBWDZVFQgWlAjBAsCoFyW4JhQoc9l"
-                "qAhQIOq4/tSLXzJf+7uvy2u9wyaamSoAy6oKgA2wbsIwuS6SZyDK5dCY0FHBc5kqhmhKJmtnvTflXYjMgbLsqgBUbABvwRvFeUC4"
-                "VKroGaD/1G3EynNRsQTp50dH9n9YNZ6u5fVYLQIuu4oCKtBcFIoRpdMEF0C5JFqmPOQdcwCLLd1/ZJv/A+PZsuOo/fZa34xdLAQV"
-                "IUrBXDYz28kWft5EM+Oi5aqpAlBpdKHXMHQbSqemiHIptEiZyjNdAOjW9YH7byj/z7TP7o1nzCtqfca4iEpCN5nsHhs6eLdR8wkV"
-                "JUqsAnD1VIKFrC8MzQpFGhEujXdCNFoEG1HB1HIhLUhFES6qogLztZmHzrSP/V/1srkyF05VACpFqgzNGrYed3jH5QhTI5GpUe0j"
-                "Bp9yukwoQHkmFUvXTepMbeK+NGT3sFKqAFSch5lRWGzD2NmICpdEYMY7nc8TPTx2FibXyezsQOwMzQguCk+nkjHdnHj4zODJv7Ux"
-                "QZAqACujIgreQq8OAUWFS3VXNJyKlg+6EjYdk9jLdKrbUNqLBlAuVBE6bpKZ2vT/Csb/jYsOZQVVAajYCB7otgxCQjCKhBITIyA8"
-                "i7tVuCc4ZhMLI5PQa+ipPKNgkZQvU0mZHHhkZrE+84m6r88IwsqrAlARQQTs/FEauSPUB+k1M0yMmKBcxKQKiAfnYXFA8YkeiZYZ"
-                "YD3nVASI9N0Cc82p/ze48ktpyLhsVQAqKlgV6iokF3wWVeiqUHJJDGiJOXMP684Mkm94IRNb1mF9oEwNKiB68d2FSQFFpuSpfsFb"
-                "PXlhACpClKhHhx6Z6Lnuf7XR7Y/EKgDPS2WXCt+owu4LAjCrwl8Dn+RymJS8XmNwssO6U8cJWY2HXjCMtwYbFNFnWEdwkA8oAHmq"
-                "719sxjdDvBWECoCgovnUwOk/7KXdKRstz10VgGqhzlEvUv1H3ukbgqWVZ9Sve8QNGpUhE6lxjoKPlu/pJ3FhZihOlIl+UoWf5RKZ"
-                "CEYV1wvccF8HVyqH9tQ5uaVGlkdcGXmCKqqRKAqARMLEcDg+OmwYm3HVQiCWwvY4MfjYVLD+94yas1RwPK2KKEQD+dLp9Jt6df3a"
-                "LcfNnm3H7M31nux0HmwU6n3hGV7HNdoSS60QRubsC5JS9uaZ3uWd/rEoi8/5qUEjmAADcx4blC1H+gxP5vRrwrFdbeqkGAWTZNg0"
-                "IxIIKD3Tp7s7/UCnF185NtO5E4SvXgokFHb29OGR/f9BTTygokoFx1NURKFINUlKXr3rlL1zYNG+sT3PzeOTBsGwRDlPeTpGob1g"
-                "YYExb/Utm07bl00P67480z9OCvn0pe74KxNhYNYzPBnotCBPIwfiMfKYkyQ1rEsRoKYZO8I2TmbHPn4kj3+2YWDLndlC4KuXpbQd"
-                "ppqnH+umnd9PQqoCT21iFYBKsOAde7K+vGbrcfdPr33U7uVJB71yaRQAF2Dr8XTj0Fz4Z8c3hRui4aeA+y41TMEJPrHYGNj66CQf"
-                "Dh9kSudJ1BI14rCMx1Hu4PUc4VPxsZr2bmm/hWyBVejLz56UK0c4L2G2fnzyyMijf+miLUSUp1MFoFKr9amr8JtbTtjXZeWVfrQ2"
-                "MrAg7DxkX3N0a/gzFV4OnAIil0gFytTiQoNUAwkORbFYcbGZlIVp1Bi+cSTvv7F2tgPUAGU1USIqEUEQFUCuUFQUJYIAKqgUOtOY"
-                "+POZ1tlfrpUNIpEnqQJQCYY0WH74az+e/NjAomyzgWWTFsK24277oW3l3Sp8E3CQKyfz+Dd1pPvTrwhfs01wjYTVuBvQ0XNzfrJ5"
-                "2reKdq1Ztsh8E7BXIACe3C3Sc11qocbpwRNzpwePfSb1KU9SqQIgCmWimxLPr1z/+eRVQ3OyiWUmQJZjtx9zew/sKH+nTPgpUe7n"
-                "MvQ0p8RjMZSUDGhr+GX+9p/ZGjfekNEABPCsPo5Obe6xYyP7f+P60y964P7Nn2zmtlhf87WGoholKk9HeEY2GlHBFDbvJj47u3Pi"
-                "+gVVJJiyF0w4BMITKlUABOhnvLjRlZ/ZMGHfODRnBZSrpd4Xtp5IXuvT8Niptv6qKId5jhTFYPia9EYezo/TjX2MYXRIB99ynd99"
-                "7uAPgLI6KaJmyKgd6tbmPzI3fIZF6ZDk9UQlXlYAXLQSRaWwednKBxFkadQgKjxJpQpA6fSORs+8fXzSvm5ofmVOk4fmDVuP6Xcs"
-                "tMMjs2P8lssNz4UCgnCD3UHaMBzonmGuyAcatn5LRs0DDpTVK9LwzXWt/tAbH2k++qsnJrphsJHRSuul10AZA5d+BmBRUQBcSHh2"
-                "FcNXKRV2J6X8xqbTK3fwL1HGpmX0msP2H7gi7rRlfgkhUha1z1irzvhQRpH0Z+Z975OLdLwSAWH1iqQhIy1rzf32UHz4xDSTkyXd"
-                "0tMtPEYEEa64ShUAATYAf7b1hLuj2RVAWVnC2JR9+Y794Z3Z7ISVGAwiCZCdm9ozTAZk/TKkY2OJvXZ7ay4Q//IROTif01vlfY+4"
-                "kDHcHWvXY31LPbFmYiHn/iOzHJ6cRxVCVK6oShWAYNih8J7dR5LrarmwWtR7wsbTck2ZxO8pbH6LN+WvRwn3RYl/P19UiV+6cP7+"
-                "syjh80HCJ73xf9KV7muHGhm3jm+ePsap/T3ycnUHQEGF4Xx0ywvP3nGP9emuQgqcEfpl5JHjCzx4bI5eEailFmOEK6/ivrp297G7"
-                "Pce/3XnEfU2tL6wmokp7wa5/4YMbfk7Lb5hJfborifVBUYNRQTCcgwJIJBKJElnf2XSDn71+b96Y/e4T7UOPGt87zWzsEmSQVU1J"
-                "Yur25HuueS3xj+6Vz//spJn8m5rWyYtASeTYZIcT010GGynbxhp4VXyIqFKpAnAJq/11ra8/JW/Zfsx9R6sjrD6KUUlGZ1s7YHgH"
-                "RCCwRC++k66UBJJ9sTO0Two3ud7rdFPrKXhWNwUgI+MF3HB7LaT//mP208lxc+p9g6aNRVjse3yI5GUkqhJV2ThcJ0sMPujFLxMq"
-                "VQBUwDsYmJc37Dxkv3t02tRBWb3C0lyyAqMJG2b3joGMQQEEQFj9AgbH9WHf7ZT80j3Jvd1Z5j9oMFgjOGMpfODo2Q4IOCNkiSVL"
-                "DM2awwelUgUAUZ6gAqJgAyhsufZh+y/XTZgbQJc9OEWiebAsAl6Umo0MpIUYlpUAEcg5T1g7PGC43l93Uy1m7/yr9O43dKX/xYiq"
-                "AEaENBEAjk12KcrA+uE6O9a3EKFSBQBs0Ke8Iac1B60F3jU4x22w/Cv+/Szy6G5/z9nx+JcqnM1ybh2dsv/g2gNuV+IvHoFKBAxb"
-                "46YtX1+89APvT++5pSO9MwmOC1kj1DPH9EJBjAvs2dwmRuVJKtVdgCgMecd/2nbCvrjZMwLK8hDyTHl4T/mlYLlNhe+PhncFo/8L"
-                "Mb+Gqb3uEy8p3zA5Gu4D4WIqkYREdsTt6+/wL/jILX7fnm1hE4M6gMWS4J6YmkkocuHAsQ77H5+iVLLUYKs7BtUagHdQ78mNew6Y"
-                "7x9YNAOiLBNhrh05stX/VRT9ReAzooqIw9g6npnuWe6ZmtSFg7v0a94G218AORdXyci4Ody05z7zxd/u2M6/TnD3CSAI52AEVKHb"
-                "D6jCiakuZhayVmRX09KgTo0GDouifIWrAiBRAVCBNGfX6IT85PoJM8gyytPIxFj84OyQ/sLYBPcmHsQ0ML2TUExjyhzXnWfbnP1H"
-                "rY7Zy3NQUQAa2uIa3fmN87pw4ixT/6fAQS6gF1wSAMz3SnxQGqVwouzguR8jjqZRmqZGabtYFb5CVQEwIQJQpOpGps3XbTkqb2SZ"
-                "TYyGmanh+N8Tz715BlOjlkJmsbOPIN1DJAwmI92dt2+Z3fF/N4t2BgXPVaVgU9xOoP/mM2bqyBmZ/IUUwzOxRv73+AIem5zjEftZ"
-                "Chu4wW9muFtjvvAYVb5CVQGIBgBU2NNeMF8/OucAZfkIU2P6V1Nj8dNZLnQaMDXawZ29F9OfRpNBQ8hutNG+p+GbmcEBgUtRWWRr"
-                "3Nq+zd/82r/KPvhOUTkCCgjPRAQy68hwIHC8M8uxRRCEr2BVAPo1Q7AwMsnrRybNm0BZTsFEFlrcPTcoj6alxRY9hg5+AlP2UFsj"
-                "mHJjM8++c/fUDeNG7WUd/BUFDOvj+O3Xlbv/63F78psieskHswoIX9GqAKiBIlVGZt320RmT8CTCEuVKmRyOdBrxbLAaPQY0JWoO"
-                "4gnG4Mps92Bn7HuNJgKRi1NAn+Uevj6HGzh6/uugAQdMKSCcpzwzAfQiv0N8lt9Rnvz/M2ahJnA8cvk8QzpqXxhuvOUxe+RVBvNx"
-                "i825BMJXvCoAtUUlhnhtc1F3u2AABeDMWGR6JLx9dMZsXDfhfuRKREAFnRqNJ2p95jadSghxlqL/EEE80SqF67eGO+u+dvPctRsh"
-                "cFFDAq9K4UUZLEQ4G5a+Rp5snYUtDk55uCuHhyNLFIiAgTsctA3sSeDVNZgJ8N878DHPE25J4MUOZiJPaAgcDnAgwKiBoOf+/AjI"
-                "0owKvKUFmy2c8HAqgAGmIyxGKID9EXoBbkrgjhRuT+HuHN7dB4TLo1gc43FkfG/Y+fMnzelvLSXkBuEJlSoArlTauby+1pMXAKhA"
-                "L41MjIbfPXyN/20V+48fDwBXSq+u+5OShXrfIP0cNzlPTEYRhIVs7vaBfPCNzXIUWOTiFG5w8G8HoNDzAVDAAggosM7AiIMjBfQD"
-                "PFwAwIsTeEkKGy3cfkEARiwsBngwvyAAEW5y8JNNCMITWgLv6sKRLvz/6rDVwRcCHPYwH2FeYSrAyx18WwPmdSlERmA+Lk3/XAAO"
-                "BXhNAl+TwriBgwFQQLh8HotNbvO3vPxv0/mvm5X5v3aaLHJOpQoAZcrgugn7slbPrAfwTsPh7fH+4PixZldenRXyA1xB0TCRp/QC"
-                "QpSIH1gE6RNMoJkPvKTVH7gNcp7VbIQPeThQwu4UthguqmVhnQMKQOFGB29rwE0ZT7GoUDc8yREPUwpfW+NJur2lz7++Bi+owXcA"
-                "KHyhDx/M4Td78Mfdpd/xxRmMOZ5VVLDC86cYHKO6jqY2fmia2UcLii8IwjmV6lkAXjs8L3safUFFtduQY8d2yE8NTkXqHW6r9WUr"
-                "V1C0dILF18oaR4dO8IG9v0Uamyxk87z+i9/TuPX4nRaUZyfwUAn/rQO/lIKwZCrAIQ+5AoBX2JVAL0KpLBH4gx78ZR/+TQt+YpAn"
-                "GTawzQIKCGDgIyX8ty7cUQfDkvv68LE+jFoYMBAUjMBkhEcCfLiAIxEOe3hpvnS5IkA8971tC+ssJAIWMIAVMAKbrtTdGAU8W+KG"
-                "O07J2e1TMvOFBEel2goMQL2QOwbnzaj1wlw7dh+8zt9lAx8emhOG5sympJQGV5BRjFGwKqBKlEgkEkxJqxxs1v0wEHl2AjMBPlDC"
-                "ZOAJ9+TwvdPwxhl43fTjMwMvm4T/MA9z8cu+P8LHPU/hBGqGJ1PYH+B4AZElnynhwRL2WLgmASswXcLb5+Bts/DXJShLTgSY9uej"
-                "9Hd9+OYp2HcGvncCfmsWPtiDPHJlKaDc6K9tjseRbYWUPKFSnQGkhexypbQAZgf5wpHt8RezQoqH9nl2HrADrUURUK4YpYHiSpMz"
-                "3Bnn6x/5VoSMXrK4Zc/EDTsEBxQ8J1FgIsBncnh1HTKBIQCF6QA7LHxtAp8O8Bc5NIQnUWCBpxIg6FM/nI1wwMPmFAD+Zw4I/EwL"
-                "rADAf+/C/9uDWS4gS5GaCjDqAKCjcOrcusWfBXh/CVtz2N6B3xmCQQGEKyVhQEYYeu0Q7U82aXyGShUAgFZHdtdyqc0OhVOHt4f/"
-                "USR6qLSBxWZgx2M2q+WGK8kEGbGBGhpo9ZsMztwE4ihs/pLhztgeiFySUuGhAu6sQSawwcLrM7guwvc1YVxhoguPljD/NAfViPCE"
-                "u7qwI1maTQlPoUBfgXNfX53CN2fwqhoA/G0X3tVbCgWGJ4kKkSUKFAodBRTWW9hp4RMlPFzA7zvoAAhXjqFJ4+YhBq9tUFsKQKUK"
-                "wMCC2WYDdnJU754c1z9PS5Ay0lJhYNFkRrmikpJNrQUaWSmEIBTRgVisuFsE2XjJAfDAZITAko0Ovq8FqcDeFKY81HpPf2e7ZWCf"
-                "OR+S/7QI39GAnQmsczxFrjATQQFV+NEmtAyUwOf78DMLcL8HhKeY16UBsMC+BN5YgyDwugQGBT49D97AH/ZAuMI80zL3+dNydn+T"
-                "BudUqq3AdCbHQuzX4t1ZzjEQWguWIlfX7Entir4PQJFmh82n19OaG1Fq85b2XJ1oLNa6TTa6AS6JQAS6CsqSAQvXGkjkwk1xT0Nh"
-                "p4MXOAA45uFuDy+OAGAUBgUWgHjBQXywBP2yuwSLAe7pw6kIKVAIT3EiwKkAAE7gjU14bR3WWUDgfV0QlhzXK7wVxzBpTnUesQf+"
-                "2yPm4Kea2qBSBQCAkxvDX5aJBoX7Gx1wXsGAGmoqWK4gAYZnTPs9b9bsY6+E2z6S8I9+p0W/bvGhHLUxSUCf37LswwV8ug/bHbyi"
-                "AQ+VcCYAwlOsM7DDAcADBThgKgAKGw18ewrvLqGj53+Ok6duRByy8LY2XOvg97rwwRJ6gHKeAyznDRnAnA/IKQ8KIFxZghL1k/bz"
-                "/+uMTB5saoMER6W6C3AOPw38DPBFAGF5tRcFQaTTgDIVXHTYaHHRJUYNoDwvMwH+qAtvnYP/MgvdCC3DUylsdrAvg8UId/dg0Z+/"
-                "xs8EtliwAAoACgRAgF6Edy/Cr8/C5/owYOAbmvCOEXh7CzbwZHUDdXnyPoYzHooICZByhSmQ4vG8P/nQF+bM4q8kJPupVGcAX2ZC"
-                "FEQhWPDmiX8XloGLwq2f13026l07HqWrxmHVgOJE5XJvc4OyJABzCkc8/GoXbk3gcHhq2uoCtySQCgjw/W14dQt2WUBAFRoGzJd9"
-                "zwYLIhAivD+Hu3rwvgK+p4C3tmGjg3/cgiED/24BTisoMCowcsF6w5914L055Ao7LWz+sucBkOeRYwVadGWKT7jPfHRGZn9CVT8v"
-                "iFKpAvB0VMBESAsBQIU8CoHnRZ72gZxNJ+J13sbxkbMcQSw2GgAjl7PeYIFhAcuSCCQCCByNcKrgqRRudvBiBwCJwE0p3MR5GbDD"
-                "gfuyz8YMCKDA2Qgn/34KOBPgFXXYk8CohdfW4D1dOOshAE2zNACBpY1IH80BBWPhJgse2Gjg5Smc0HP/Xbg0BmgwJafK+5Iv/sVx"
-                "c/r36rF2r8dTqS4BnpYt4ex45JE9nqNbwv+ew1tDMdeOOSiXa2Y4fObseHi0X1PlAtHo1ii6WaLigiIIooIgXBqFmsCuBBKWNAQG"
-                "hCUCJUvzJArfWIPrEygVDpTw7g785jy8vwfdCHWBG1MwwhNSgbY5H42aOR+5hyM8WkJQAOgq1OTJTxkOWQDoKdwXWGIhKnyhhCHg"
-                "h+rw2214Q3aJMRTAUJBz0hw/fG/y6d972B58+4A27+JiKlUAskI4dE3g716V85GXLs1dr8o5uTH0eR7uv97/xidfXP78yQ3xiyo8"
-                "Ic11Z63Hlmgt3YZDiSgBvZyHXzKBve78qv8mC3sSLmqvg2+ow6iDboT3duC7Z+CfzcCvzcPDBSCwwcGQOZ/8usBmCwA1A1stpBf8"
-                "HsdL6CoATEZ4wIMClqXfaZ0FBSY8jAMNAw2gZWCLg39Ygx9vw7iDU4FLoSg5fT8r88c/kH7g3z9kD/74iA4+rCiVKgDP6fQ/KQXn"
-                "lyYrhDzVIqLPY4+BfOfj8+F+qr8w34osUYbmZYfTZOuxPaM88uKdROewUbj0SwA9f78/EQAYMbDR8vQUrMBvD8HXZOf3AlybQmIA"
-                "C9MRToTzB/xrExg0QISWhb3J+SC8IYUXJQCgCpMRCgWAQx4eCxCBLRZucOev/+civCGBbz83P5DCf2zBLwzBiIUHSjjiLyGGjo4s"
-                "8kX30LEo4WvqWn9XgkNRnlWlWgNISuHlH0150ecSTASAaGBgkdmZ4cjozOU9mNJc5IWzQ+w+eo2+v9eKv/Oiz5kfAxiZMdJeMMMn"
-                "thl8YogSUYnESzoDUNjh4EdqMGR5QtMuPZn3p134YoTIOQrrDfyLJtyZnc+4FXhxBq928IESBEhY4gTeUIP/L4fcwDcmYAxPuLMG"
-                "Ly3gE3OAgwhYlkxEUJa8PIVdF6w33JDCTw9D0PM/pylPXiOIXAJDic9PmDOPzMrC7LwseoM8EQAFFKXEk1M8OQyVKgBFCmkh1HsC"
-                "whKFxZYe6rSYGJ1h/HLeEtTsyAaJcVuvwT1To/Kfv3Bj2b/pQfcTNhiaHW6u9cO+rO8fingQH1Qiz53CzQn8yAAYnmybgW+twYM9"
-                "KJQnpALbDXQCuAta0xb4pw34xAI0DGywAGCBO2owtAB7LfxoiydpGPihBnwhh7s9JMITAkAAI0tbkncnACDnT/2f0ZCBmnApFLSg"
-                "7HuZT1raRLRJQoJRQ4JgMeyMW9nEOgxCpQoAAN26og3l6fQzvWt02nwd8EbOmRj19y+0dHpo3lwzMmO2cxFDc8bW8jgcJVIkHDy6"
-                "Lf6CUfr7Hkl+dGSaV4xPhDc0F+NDqoFoygCRS1ICB0uYV5hTOBTgTITpACef5o+bUfjvPbi7hJYBYYkAFuhHuK0Ge9Mnbxf+P1qw"
-                "4OHeAo5FmFdQlnQilAIKTAcILHlFBj/YhhDhsIf/0gGvPK0RgestlIADPlfAY4FLJBaTGoQBbQKgRJQlDlgXx7BqUJQllSoADeWZ"
-                "9Gv6QLehnwkmvtFGAeDQdv+hQ9vDH193IH3TyIz9V6A8k2bf0uqGbag2JMZuEmThoWvDzzZ6Zri9wFvb8/rCoB5v+3jtdaIJCkZ4"
-                "TgQ+X8JPzp57si7CI4HzBBDOE1hU+EAB5Dytmx18Sx2swGQ4f0r/lhr8eQd+cgY+FwB96s+xAh8/93jwywy8JFuaYwX818XHpwez"
-                "gadSMHbp8qKvkAIHIxy+tAVRRX1JOWsxMRCeuZjCeZUqADbwjLIcunWdnG1rHJ0VA5CUsqnZkQeTguFo+FcmclFZX25odGVfWshn"
-                "g4VWR3j4uvAbw7OaSDScHfaydWpBY1w446XIQWo8JwKnIrwvXuL6rDzzy0O/rwGpwnsW4TEPucKAgbbA/R6m5Jl/RgA+5uGdXWgC"
-                "16QAUAp8VwPOKPxRDwrhKSLw157LJwSJiwuyeL/FeUF4TipVAEanDc9EBYLVk5Pj8cTorNkKYGDdhrN2LO1Rnlzn2XLacjGirHMF"
-                "G9IcABZb4CKHFpv8+yKTQVtos7T5opf+RDBhEaTGihB4ewdcBwIQv2xDXgAK5eIE/qgPf9oHKwCggCr0gEJYHgbQ+UXT+4TDls85"
-                "AJUqACZyUdHIh4tU/0Oe6e9luZCWMrbQ0uHTm/RYe5GHt5zmOi6i3mFfWnJjp6XvMxFUQILE4DgeDKeMKHlaUGr+UDDxDMgYK6Wj"
-                "gD7DYqfwnOS6NE8hLA9LV+Y4bI5PROJnAlIKz1GlCoCKcDE2MNuv8fGjW8LUnoNuNM3ZWu/L1jLhA90GvzI3EH9/oCOYKDyVMjpr"
-                "G7NTet3DY560FFBwCgCiBIA8KcglvzfYcBS4gRUlV+DAFa4OBRrMycniUfvY59ra6gjCpahULwW9KBPBOyZnhvXX+jX9pdFp0yqT"
-                "OD41or0y0T89uCN+1y0PJF8HGJ5GLTeMzJoban25/fH5lAJJgCJTYt2As5SupJTyWDfpnAjSx6oASuXi234hZU4m2W8P3bUovXcP"
-                "aJNLUqkCUDqenXAa+I9HtobX7jloX3Z6Q9wyMR6Ses/kZzbwc9MndfvItOy1kaeV5bJveEZ+QFQ+BSAKwUFSeNKFLi5vkKDktjvd"
-                "SWZoF6NA4MtVDACegkJK+jD3kLv/wUP22O80tP7xSOSSVKoAzLYjz0YAFczEKD/YXpD3R8OtLrBZ0MPOyyce2Fe+56YHkh8cmbGj"
-                "osqXq/VotefkurMbsQgBhegsQ2dmWX/gCNFtBaA0RXcxnaddjPFUlUiIkeBnZd4ftsdmvmAfeU9Tsl9r68DReToIwiWpVM8CyHMY"
-                "AFGiDTz26N74H0+vj590pQwrS5yXXz6+0X9gbiAAwpMp9dyw9bTb5R1vUaEJgApqIv2kT+56S5N0F4MtczBcqCJAxmfrn//YB1v3"
-                "vDHTbB9wh0F+DuQ4lSoAV4MoIc/4E+94J8pjF3w+G438/ORIeNfs4FMjIAqNrlm/8aT5CVeSKoooBAn0a1362dL0su5k6YqzIFyo"
-                "UmNq46MPHR1/9L/0NP9bQY4KclyQGYFIpQrA1WIic6KcAOa4gA3s945fnBoOvz8x6p8SAedxO47YF0rklaWljgqBgoXsDIu1uf89"
-                "C7XZT5UuvxccFQBBRXW6fqI/OXr0/8rrnfeZ4KLFsupUawAV53m0dPyLkxuDiVZeNjZldtkAAKLQ6ggjU/LjjPJQdPpwdHV8az2h"
-                "OAMCeVI81E0WP16azpuTSAVBUSYbx4vYcx/emG9eSG2Lnusg0aAiqAiooICywqoAVFxgrlB56xdvKN963X73trFJsy8tpG0jAOw6"
-                "7F5lJbxqcswfFTfWdQOvJJ/7IFLMYXD0XOfwRPNIuWnhmgQAlK9eCkAW6llnLgxtkga0IscbBykWhcQoRgKiHocirBJVACr1vvzB"
-                "/Tf6PxmYk5/fs9/+8w2T1p77nKSUn4yik2j5PwGyoVeTnb4P25mmdDI13Tr76OMBuIEKoiLt/kh2eP3+ZLo+gYspAAzDIAoUAAyy"
-                "ulQBqGg0dJznl09uDH94YG/4+o2nzL/beNq0dj5md7hSfmz/bj9d75u7FEugQ7ALFEkyXQvZQTA3QKwCANRChmBskIAlggDwZW9Q"
-                "ElaVKgAVUTCRySJlcnZQjw7O6oOi0j4zHt/SbcRvbi3w7bOD4S6jAd18Hen0o0jvxCFvWu8sTPeNacz46qaAkPkB0pBtNhhjsRFl"
-                "7agCUDERnGfWRt5vA8wMxwfPjIf7TNRTRRKdUXxobaQ2P0OzN9cxYj9zqn10ZvP8NUMuZgKRr2ZGM2y0GySamkTTZa2qAlBRgbTk"
-                "S/2a/v2QFJICED1KQKLFp744OXT4PRsWt36ni6ZZXQpERKVu1NSMrv0AVAGoYCLYAECBQFJ4Aj0WarMUmZly0f7f3pTfmEGTCoKp"
-                "WVxiMHxFqQJQidax7sDDbDnRolO7jsfqD5So+8JU48xC5mu4WAMCX70UwdRETSpqWbOqAFRSX8NpBFsSEnC+ZNPDh7DdBaIZY6A/"
-                "wtapPeQ2L2ezqdMjbnxfq6hz9QjgAAvEcxMAZSWJUhclFWWtqAJQUQwpiAMDRuDhDZ9j1i0gk4YsUZJcaMwJpQPvlKxvaeRtYjoX"
-                "p1qn/3hjZ9uuVrFuG3iWn+DFM9k8dmimcfYzzXzwG9r94cGBYhCrbmUjoKQoDmW1qAJQETApIoJBMAoABhBRxFh69hSmO4mZT5hH"
-                "mRp5AA0dknlHQsTFlGj34K3epoSbggmmsHnXu6KTxHSbjZarJ2O6dmry0dH739mpz/2Pkc76j020Tt25d/LGrxvIx4ehZMWopII4"
-                "QVh5VQAqYkAD5GcJJeQIYgEgVwilYnsZnfggtr8fyWtMW3A+AwbAKioRDYmJEq9tFq1fqpetr8t8jaZp4bBT6xa2tJt5OwHP1VCa"
-                "nDPN4389n8784UDZfsyoeXi6depwf3bXTQO5GWYFCdIwajOjllWgCkDFQDEFZz9MX5WeEUhZEkHmwcwrBgtuCADLOSjnoMKYUfMn"
-                "10xfd2PqB4CS0d4GgFEAiEBgeQkAp5oH/Hw6+94s1B8DxZsireetO110Y6CsJIM0RaUmKqysShUAmyGdQ8jUp1AREHnKi3RVnv2v"
-                "EQsSJI31a3dMXb8t9XWghBV7rs0x3Tj7vk4690ijHKDhG6ioeFOuN2oarDCJJhFvrYmGK6ZSBUBtjUtjUJfiNKXeTcA1uFzelBuS"
-                "kL0p81kdBIhcfUIQz5nGsaLjFt+hwoHUZwz2R/Hipe+6m0RtBsrKUay6oUSTptWEK6ZSBSCdvI9LYVQQMZhiAXUJaiKXQyWS+HR8"
-                "dHH9WwALkZXhEHx5dPDAB3OXf86GtJ8nfaaTM6BSjC6uW5/5zEBkJVl1Y4mmA48PV0ylCoCbeYBLoaIYBTWWfpaAKpfD2zIdLtfd"
-                "uHFuxxbBsDKEKCWz2cxsJ1n4bRWdN2LoJx0WsmmT+GTTrqnrBtNQZ8UDEO1gGtKGiwlXTKUKgJUBLpkACngum6I7ar75zQPFOqC/"
-                "Ytf9PTdTHm0f/LyL7n1RFE1LjIWkTOsuJq9qFYMNIQFKVpILSS0NaXpFA1CpAtDqDbESvClvqufNV4Bn5Rh6bvHImYGj70xi5hR8"
-                "Ehw2pASJAy4mL1E0A2VlKYmmJvP1mlXHFVOpAjDdnORqC8Yz0B0ebvUGN4CyMgQwHB187OhfXPv/vLdRtnzXdXnFsW/gpokX000W"
-                "WjYmN4uadDUEII0pLT+QJCHjigWpUgWgcH2utjzps2numu2jvW0ruPiX0HXTxWNDj95/qnWiUy8bTNenuP3UyxnIB4kSMxvtFlFx"
-                "rDilWbaYbJ6WycYZXHSsZuu5vQrAWtHuDXO1dcPiS9v99ivS0AQ6rJQzraMf7mQLf3TbqZdh1TLYG+H6iVuwIaFRtKyibcCw4pS6"
-                "H8Sbcvj0wHHJfE25EipVAFxwXE0qylBn9PW1onkblKwMQ27nOdM6+SGH+8wLzr4ERdkzvQ8XLVOt07iYSKs/2DAYQFlpojVqZWN7"
-                "4tN1qc/OcCVUqgBMtc5yNQVTsm1q76ZWMZhBZGUYpupnQ89152tlHS8eNYED676ExeBNSas/lKxb3LyKtt5GRM1W55O9j8+VCUCl"
-                "CoBRw9UUENr9oVazaLFyARAW0/mTzruzm2e2E22k05pGJQKCSCDztXXt3ogYtUBk5Sk22vHU1zYnIeOKqFQBaBYDXEWmn3Rf3ywH"
-                "roUMKFgZll7S/dB8bfZztVBHUQSDqHAuioNW7XVprAEKKCtPMWoGk5iMXbFFwEoVgMLmXA0KCKKDndHvrBfNXawIQYnkdp5e0rm7"
-                "cPlhFcUgNMsGTwhm3Pn0RhBAWS2M2nbqa8MN3+SKqFQB6Ls+V4NKRNSanYv7bqmXzRp4VoYy2ThZ2GCPjHbXe6MGAawYzsFKuT7x"
-                "tetBWT0iWag1XUzG5tM5DMLzVqkCYKPlalARY9RuGumNN5NYBwIrQtDp2tQpG5JiuGyiogCEpOAcnEmG0pBew6oSGSjaJgvZ2NGh"
-                "AyQx4XmrVAGo+xpXQ5TYMGpfXfP1BpgVCoCgoKXJj3aTxY5Vh6JYtQyUbQyCAtH4RuqzYVYVpe5bDBUjg1Zt4mJS8nxVqgAM9Iav"
-                "VgCGBN4sKgOgrCD1tjzjbdHTGIkSkZgyUA5gokFFiRLrNd9IQQFldYhAjXrZ3JqF2ivSkN0NRJ6PShWAxdrc1Tj4SXxmN85vfYld"
-                "4ZdrCKKlKx7Jk3zOxUCUgJSGZj6Iiw5FKWxhDYbVR3HRbWoUrVclMfkgz1ulWgRMeiw3b8t0MCQ3bZy/ZtzGBIislChBC5N/trD5"
-                "dJSAosRkkYPrHsCooTQFQ70xts3sZvWJWHXDrWLoxrqvCwoIl69SBSArayw3E83mmm+8sVEOAWGFAiAogcVkvixs/6FS8iKKR0QI"
-                "CRxr70eB3PXYOXl9du3Zm1mNXExtzdfHu0knqiiiPA+Vag0gH2S5labcViubd4Jn5QhBPHPpbL9eNuZNNNhoCYknzzpkZR0AUaj5"
-                "ettoAkRWl0gaMuq+0T449mAaJfRFDZetUgUg8SnLSQFjbCPztTFWlBBMoDR5b9vcbgNgo2O+Mc3R7BFsdOffVOyzJmRAb/UFINZY"
-                "11s/6EKyJxh5wKiJXK5KFYCJ9mmWU7Cege5wY+Pc9lFW9KJVUInaT/I5UYIgmOgoTUkSM0w0ACTRr7dq14Oy+iggJCFtNYvWtwTj"
-                "Txg101yuShWA0hUsp9zmjIaNG0a7mwwAKCtF0Vja/iIqKghiSoLxOJ9iVAAIJmyW6Lawihm1zXZ/6PU2uj82aqcRLk+lCkBaZiwn"
-                "he2NsnFbEptAn5WkosHbcuFcAECFKBEXHKICgBU3YqIZYdWKWHXJSG/9jWeax9PC5Zf/RGelCkCr32Y5pb74mqys3wnKKhCDhB5I"
-                "FAQEQElCAggAMYQhq3YYdPUGIFpG+mPN/aP312br0yQh4TJVqgAMsZxKU1xTK+s7IbKyBAUUVS4gKiShzjkoMurUjYKyWglCsxwg"
-                "C7W9qc8eSC53W3ClCkCtrLOcnEmaSUgFlNVGUYxakpigKABKrJtg66xqglNHo2x+W2Hy+11MHuJyVKoAHB95bDl3ALJufnNSn28B"
-                "kVVCuZCCUfNEAEw0NVGpgbLaDfXGvnE2nf6D+WzuIauWS1apAtBLOyyX3PWz7X7vuoYfAQIrSxHEWDU1VEQQFCVRhwvpEwFAqZno"
-                "HKuaArBxcevQmdaJ0Wk3SRYyLlmlCkDqM5aLSryp5hu7jWZAh1XAuOiaqJhzAcCpI/XZEwGwxmQuOtaClh9loBy8PQu1u7NQP8Wl"
-                "qlQBqBdNlouN7uU22l3gWQ2MinEhGzDRGMGgqjgc7oI1AIMkVi2grH6Ghm++pp0PfagWGn8OyiWqVHcBBlkupS2uT3y6SnbVKaLG"
-                "ZGV9KBovKoCAiUuLgBEFIChW1KyRAERqZX17K2/vNGoQLlGlCsBgb2Q5dxluSHxmV81rtdWShaz+6Ogj0nd9ovGMdzYxfuaFeFMi"
-                "gDfWrJ0FNc94d2O9ky5uOt56jERTLkmlCsDhdQ+zHKKJbJ/Y26j7BqsmANHRLoeaKrHlbYGNlunmGT65529AlcLm7Jq4wew5e9Pa"
-                "OQPwg9IomreXtrjTBPNRVl4VgOqNQEqwIU1CVktixqq5BMDSKtouCdmoDX2SkJFnXaYHTmHU0Eu6bJ3ZbZOQsnYYslC7pZkPvq7h"
-                "W5cWgEoVABsSrjw1qNm09AJQB5SsFi46RO24UetEjU98xkB/CFHBhZRm3k6FFAisDYFa2RwY7o/d2HddBOE5q1QBcCHlytNENNzk"
-                "YtICw2qiophotpnoBkw0MzakJHkbFGxIpFm0apACXdaGQNO3GCyGN5xqHRmz6qYFIs9FpQpA5uvL0xXjXyRIG5TVRUwSk+sfn0EX"
-                "0xk1JV5KQEDUqagDZe2IuNhgqD9yjY3uBwX5LaDDc1GpAiBRWAZGMC1BLCirjEi0Ayaa9PHBK+Q2R1TIXb8MEgoQ1pZIGrKxsd6G"
-                "bz/RPvp7pSk6Rg3PqlIFIA3p8nRFwwZRyViFrNoRpy516iB6bHTn1gASjBrPmhNJY2Y2LW695tjg4TRKxGBQnlWlWgNIWAYmRjMi"
-                "ahJWIad2xIUke3yIrkSJgKAo3pQCnrUlYtQxlI80mkXrrTP1yXcUpj8parioShUAEy3LQqgDhtVHTHRtE5PExYQCIU96mGgokj79"
-                "pBegBARQ1hIXk2Tb3M4fX8hm/2Y+m5l0MeGiKlUABGEZiCAOEFBWGUlCOphJSJOQEosG7f4QqCHzOSaaXmlyklhbYwFQQMz2+T0b"
-                "jw8eurmbLD6YhqzHCqkCUFFWHUUQaqE+JphMFBq9dWxZuAYFBPDifSddYKhfZ21RBMFpxmhv/Q8peiiJ6Ye4uEoVAGF5iACyGhsw"
-                "3B9NHh67L51uTmBjQs3X2Dq/ExMthc37WagDBgisPcpA3n5hkLDbBXfxAFSqAHhTsgw0SlhE8CDpajsDaOfDIAz2XAcXU4IpWcjm"
-                "MGoobD7V9K0eSJ01San7ZhpzHbZquKhKFYDS5SyDGEw4E4k5kLJqWMAwn01RmtJbddhoERW62QKC0Hf9h0b6Y4+CuYVVTS4Yc8Fn"
-                "Cb2k05mtT5591kXAShWAPOlx5akPJnxRRb8BzABXhQUCIIDlqQxKwWz9zNzZxqkPFTZ/0KhBAIzSSxcByJP+5/qu9zGIKxgAAewz"
-                "3IkQQFFKSlvgxROMJxK9mtgrbTg00Tz9gbnazL0uOi6qUgWgsH2uPC2CCR8KpvwB0I1cBYXrFi4kU1FCmbs8NdFwDoIld51wqnl8"
-                "frJx5u7R3roft+pUARHBGCjoA+BNfrKTLXym72ap+ZV4makQxVPa7lyQMG/UNC6ogCoSo/Fh0S0WUULoJIvznXR+Njd5p0z6p6Yb"
-                "Z9/VLAY/WisbqERWQBWA6jageFG9r5MszgxJH1G3jAeSQcXH+zfe+6nrzr7gn05nkwc+u+njN9V8vQQwiK35Ol9c9+nTRwb3n/yO"
-                "L70tihp9ptuhNjoWs9mZU+1j8zumr29f/f0Ajpn6aR4cu++/PB6r32gVg68BVaAEChWd97Y4rcQT1595UZmGTPvR4QiqMdE0ZME8"
-                "1zcaVaoA1HyT5aHx2OiBj7XKgRcOdbfXoQsoV44ABnCIOtNPun/12W0feTRGXTRq7vWmVACDiDcJhc197vo8F0bt3cGEt81lk+8e"
-                "zMcAA/irFALB2yLkSXemMMWEN/69oIAqEFU0eFOWivK8VaoAWLUsl8IW7zg88mhjswk/Nr64BUi4MgzQo5PMMt+YLmbqU/8jd/0/"
-                "7ae9LsFgfeIFBcAgGDVYtdjouJAoKEIU4QlqyV0+f2Lo8HsmWqd+duP8lh8f7o6vG+yPAg3AAwVXngAJ0KSXdh4MafG5Qd9GVDoX"
-                "noUoilHDFQlApQqAosv5oNGBxWzuPx8deejkXH1ii40uMWp4vqKo5K5XilIGE44cGTnwl1btgcSnRFU88XnsWLIUtqSbTBWi/KJV"
-                "Od0omvsmG8WmXta9udVvbx/ubWw++dJAn+e+CwN4Zusni8Va76NnB078vsV82mlGjqdSBWDNxqXuGwe76cIvPX6QEo3HhgTB8Hx4"
-                "W6AmsHl6FxvmtpH5GsF4rgxFVHDRYaLRJKT/LfN1Tg4eqR8cf+Dbxue3fPO1E/JKG5OWoA4VK4gFRFTM0xRBAFVRBRQ0KiiiQVGP"
-                "EBWj3vb7j408eN/E4MmfMcF+thbqBCJrXhWAKgJGLZmvoxLOBUB4Pnx0SzGJDkWvSsiSkPaSmP75QmP6+Jc2fupo6rO9NrrBx6fx"
-                "+NRFTWqiSQR5UgAUFQSNEn0kFip/P1oG63tR/EI0sauiIUqcyZPuR5KQPmqiQdH/fzt1UAQACMMArMO/5yKCD3dLRCR/YtpmJ+Dk"
-                "BSAAQACAAAABAAIABAAIABAAIABAAIAAAAEAAgAEAAgAEAAgAEAAgAAAAQACAAQACAAQACAAQACAAIALbr9pUzc/FtwAAAAASUVO"
-                "RK5CYII=",
-        "House": FAKE_HOUSE,
-        "Decoration": FAKE_DECORE,
-        "POP": FAKE_ALL,
-        "Theme": FAKE_ALL,
-        "Avatar": FAKE_ALL,
-        "AvatarFrame": FAKE_ALL,
-        "Booster": FAKE_ALL,
-        "Totem": FAKE_ALL,
-        "DestroyedHouse": FAKE_HOUSE,
-        "Inn": FAKE_ALL,
-        "MEZ": FAKE_ALL,
-        "PartyDecore": FAKE_DECORE,
-        "Path": FAKE_ALL,
-        "QuestItem": FAKE_ALL,
-        "TravelersCafe": FAKE_HOUSE}
-
 HTML = str('<script>\n'
-           '    var data = %s;\n'
+           '    // start data\n'
+           '    let data = %s;\n'
+           '    // end data\n'
            '</script>\n'
            '\n'
            '<!DOCTYPE HTML>\n'
@@ -866,41 +824,40 @@ HTML = str('<script>\n'
            '        <meta charset="utf-8"/>\n'
            '        <title>Список %s</title>\n'
            '        <meta name="description" content="Список %s"/>\n'
-           '        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>\n'
-           '        <script type="text/javascript">\n'
-           '			(function icon() {\n'
-           '				let head = document.querySelector("head");\n'
-           '				let link = document.createElement("link");\n'
-           '				link.setAttribute("rel", "icon");\n'
-           '				link.setAttribute("href", "data:image/png;base64, " + data["1"]["img"]);\n'
-           '				link.setAttribute("type", "image/png");\n'
-           '				head.appendChild(link);\n'
-           '			})();\n'
-           '		</script>\n'
-           '        <style type="text/css">\n'
+           '        <meta name="viewport" content="width=device-width, initial-scale=1"/>\n'
+           '        <script>\n'
+           '            (function icon() {\n'
+           '                let head = document.querySelector("head");\n'
+           '                let link = document.createElement("link");\n'
+           '                link.setAttribute("rel", "icon");\n'
+           '                link.setAttribute("href", "data:image/png;base64, " + data["1"]["img"]);\n'
+           '                link.setAttribute("type", "image/png");\n'
+           '                head.appendChild(link);\n'
+           '            })();\n'
+           '        </script>\n'
+           '        <style>\n'
            '            th, td {\n'
            '                border-width: 3px;\n'
            '                border-style: solid;\n'
            '                border-color: #673ab7;\n'
            '            }\n'
-           '			\n'
-           '			img {\n'
-           '				height: 150px;\n'
-           '			}\n'
+           '            \n'
+           '            img {\n'
+           '                height: 150px;\n'
+           '            }\n'
            '            \n'
            '            table {\n'
-           '				margin: auto;\n'
-           '			}\n'
+           '                margin: auto;\n'
+           '            }\n'
            '            \n'
            '            #background {\n'
-           '                background: url("data:image/png;base64, %s") #000;\n'
-           '                background-position: center;\n'
+           '                background: #000 url("data:image/png;base64, %s") center;\n'
            '                position: fixed;\n'
            '                z-index: 1;\n'
-           '                left: 0px;\n'
-           '                top: 0px;\n'
-           '                right: 0px;\n'
-           '                bottom: 0px;\n'
+           '                left: 0;\n'
+           '                top: 0;\n'
+           '                right: 0;\n'
+           '                bottom: 0;\n'
            '                filter: blur(10px);\n'
            '                background-size: cover;\n'
            '            }\n'
@@ -914,20 +871,92 @@ HTML = str('<script>\n'
            '                font-weight: bold;\n'
            '                text-shadow: #ffffff 3px 3px 5px, #ffffff -3px -3px 5px, #ffffff 3px -3px 5px, #ffffff -3px 3px 5px;\n'
            '            }\n'
-           '			\n'
-           '			#zoom {\n'
-           '				display: none;\n'
-           '				position: fixed;\n'
-           '				z-index: 3;\n'
-           '			}\n'
+           '            \n'
+           '            #zoom {\n'
+           '                display: none;\n'
+           '                position: fixed;\n'
+           '                z-index: 3;\n'
+           '            }\n'
+           '            \n'
+           '            input {\n'
+           '                width: 100%s;\n'
+           '                height: 25px;\n'
+           '                background-color: transparent;\n'
+           '                color: white;\n'
+           '                border: 0 transparent;\n'
+           '            }\n'
            '        </style>\n'
+           '        <script>\n'
+           '            function zoom_in (event) {\n'
+           '                let zoom = document.getElementById("zoom");\n'
+           '                zoom.style.display = "block";\n'
+           '                zoom.style.top = (event.y - (event["srcElement"]["naturalHeight"] / 2)).toString();\n'
+           '                zoom.style.left = event.x + 50;\n'
+           '                zoom.style.width = event["srcElement"]["naturalWidth"].toString();\n'
+           '                zoom.style.height = event["srcElement"]["naturalHeight"].toString();\n'
+           '                zoom.style.background = "url(\\"" + event["srcElement"]["currentSrc"] + "\\")";\n'
+           '            }\n'
+           '            \n'
+           '            function zoom_out() {\n'
+           '                document.getElementById("zoom").style.display = "none";\n'
+           '            }\n'
+           '            \n'
+           '            function create_table(search) {\n'
+           '                let tbody = document.querySelector("tbody");\n'
+           '                tbody.innerHTML = "";\n'
+           '                for (let item in data) {\n'
+           '                    if (typeof search != "undefined" && search !== "") {\n'
+           '                        let text = "";\n'
+           '                        let i = 1;\n'
+           '                        for (let param in data[item]) {\n'
+           '                            if (i !== 1) {\n'
+           '                                text += data[item][param]\n'
+           '                            }\n'
+           '                            i++;\n'
+           '                        }\n'
+           '                        if (!(text.toLowerCase().includes(search.toLowerCase()))) {\n'
+           '                            continue;\n'
+           '                        }\n'
+           '                    }\n'
+           '                    let tr = document.createElement("tr");\n'
+           '                    let td = document.createElement("td");\n'
+           '                    td.textContent = item;\n'
+           '                    tr.appendChild(td);\n'
+           '                    let i = 1;\n'
+           '                    for (let param in data[item]) {\n'
+           '                        let td = document.createElement("td");\n'
+           '                        if (i === 1) {\n'
+           '                            let img = document.createElement("img");\n'
+           '                            img.setAttribute("src", "data:image/png;base64, " + data[item][param]);\n'
+           '                            img.setAttribute("onmousemove", "zoom_in(event)");\n'
+           '                            img.setAttribute("onmouseout", "zoom_out()");\n'
+           '                            td.appendChild(img);\n'
+           '                        } else {\n'
+           '                            td.textContent = data[item][param];\n'
+           '                            let copy = "navigator.clipboard.writeText(\\"" + data[item][param] + "\\")";\n'
+           '                            td.setAttribute("onclick", copy);\n'
+           '                        }\n'
+           '                        tr.appendChild(td);\n'
+           '                        i++;\n'
+           '                    }\n'
+           '                    tbody.appendChild(tr);\n'
+           '                }\n'
+           '            }\n'
+           '        </script>\n'
            '    </head>\n'
            '    <body>\n'
            '        <div id="background"></div>\n'
-           '		<div id="zoom"></div>\n'
+           '        <div id="zoom"></div>\n'
            '        <div id="content">\n'
            '            <table>\n'
            '                <thead>\n'
+           '                    <tr>\n'
+           '                        <th colspan="5">\n'
+           '                            <label>\n'
+           '                                <input type="text" placeholder="Поиск" onkeyup="create_table(this.value)"/>\n'
+           '                            </label>\n'
+           '                        </th>\n'
+           '                    </tr>\n'
            '                    <tr>\n'
            '                        <th>Номер</th>\n'
            '                        <th>Изображение</th>\n'
@@ -937,47 +966,8 @@ HTML = str('<script>\n'
            '                    </tr>\n'
            '                </thead>\n'
            '                <tbody>\n'
-           '                    <script type="text/javascript">\n'
-           '                        function zoomIn (event) {\n'
-           '							let zoom = document.getElementById("zoom");\n'
-           '							zoom.style.display="block";\n'
-           '							zoom.style.top=event.y - (event["srcElement"]["naturalHeight"] / 2);\n'
-           '							zoom.style.left=event.x + 50;\n'
-           '							zoom.style.width=event["srcElement"]["naturalWidth"];\n'
-           '							zoom.style.height=event["srcElement"]["naturalHeight"];\n'
-           '							zoom.style.background="url(\\"" + event["srcElement"]["currentSrc"] + "\\")";\n'
-           '						}\n'
-           '						\n'
-           '						function zoomOut() {\n'
-           '							document.getElementById("zoom").style.display="none";\n'
-           '						}\n'
-           '						\n'
-           '						(function create_table() {\n'
-           '							let tbody = document.querySelector("tbody");\n'
-           '							for (let item in data) {\n'
-           '								let tr = document.createElement("tr");\n'
-           '								let td = document.createElement("td");\n'
-           '								td.textContent = item;\n'
-           '								tr.appendChild(td);\n'
-           '								let i = 1;\n'
-           '								for (let param in data[item]) {\n'
-           '									let td = document.createElement("td");\n'
-           '									if (i == 1) {\n'
-           '										let img = document.createElement("img");\n'
-           '										img.setAttribute("src", "data:image/png;base64, " + data[item][param]);\n'
-           '										img.setAttribute("onmousemove", "zoomIn(event)");\n'
-           '										img.setAttribute("onmouseout", "zoomOut()");\n'
-           '										td.appendChild(img);\n'
-           '									} else {\n'
-           '										td.textContent = data[item][param];\n'
-           '                                        td.setAttribute("onclick", "navigator.clipboard.writeText(\\"" + data[item][param] + "\\")");\n'
-           '									}\n'
-           '									tr.appendChild(td);\n'
-           '									i ++;\n'
-           '								}\n'
-           '								tbody.appendChild(tr);\n'
-           '							}\n'
-           '						})();\n'
+           '                    <script>\n'
+           '                        create_table();\n'
            '                    </script>\n'
            '                </tbody>\n'
            '            </table>\n'
@@ -985,10 +975,253 @@ HTML = str('<script>\n'
            '    </body>\n'
            '</html>\n')
 
+INDEX = str('<script>\n'
+            '    // start data\n'
+            '    let data = %s;\n'
+            '    // end data\n'
+            '</script>\n'
+            '\n'
+            '<!DOCTYPE HTML>\n'
+            '<html lang="ru">\n'
+            '    <head>\n'
+            '        <meta charset="utf-8"/>\n'
+            '        <title>Список страниц</title>\n'
+            '        <meta name="description" content="Список страниц"/>\n'
+            '        <meta name="viewport" content="width=device-width, initial-scale=1"/>\n'
+            '        <script>\n'
+            '            (function icon() {\n'
+            '                let head = document.querySelector("head");\n'
+            '                let link = document.createElement("link");\n'
+            '                link.setAttribute("rel", "icon");\n'
+            '                link.setAttribute("href", "data:image/png;base64, " + data["1"]["img"]);\n'
+            '                link.setAttribute("type", "image/png");\n'
+            '                head.appendChild(link);\n'
+            '            })();\n'
+            '        </script>\n'
+            '        <style>\n'
+            '            th, td {\n'
+            '                border-width: 3px;\n'
+            '                border-style: solid;\n'
+            '                border-color: #673ab7;\n'
+            '            }\n'
+            '            \n'
+            '            img {\n'
+            '                height: 150px;\n'
+            '            }\n'
+            '            \n'
+            '            table {\n'
+            '                margin: auto;\n'
+            '            }\n'
+            '            \n'
+            '            #background {\n'
+            '                background: #000 url("data:image/png;base64, %s") center;\n'
+            '                position: fixed;\n'
+            '                z-index: 1;\n'
+            '                left: 0;\n'
+            '                top: 0;\n'
+            '                right: 0;\n'
+            '                bottom: 0;\n'
+            '                filter: blur(10px);\n'
+            '                background-size: cover;\n'
+            '            }\n'
+            '            \n'
+            '            #content, tbody {\n'
+            '                position: relative;\n'
+            '                z-index: 2;\n'
+            '                text-align: center;\n'
+            '                color: #000000;\n'
+            '                font-size: 20px;\n'
+            '                font-weight: bold;\n'
+            '                text-shadow: #ffffff 3px 3px 5px, #ffffff -3px -3px 5px, #ffffff 3px -3px 5px, #ffffff -3px 3px 5px;\n'
+            '            }\n'
+            '            \n'
+            '            #zoom {\n'
+            '                display: none;\n'
+            '                position: fixed;\n'
+            '                z-index: 3;\n'
+            '            }\n'
+            '            \n'
+            '            input {\n'
+            '                width: 100%s;\n'
+            '                height: 25px;\n'
+            '                background-color: transparent;\n'
+            '                color: white;\n'
+            '                border: 0 transparent;\n'
+            '            }\n'
+            '        </style>\n'
+            '        <script>\n'
+            '            function zoom_in(event) {\n'
+            '                let zoom = document.getElementById("zoom");\n'
+            '                zoom.style.display = "block";\n'
+            '                zoom.style.top = (event.y - (event["srcElement"]["naturalHeight"] / 2)).toString();\n'
+            '                zoom.style.left = event.x + 50;\n'
+            '                zoom.style.width = event["srcElement"]["naturalWidth"].toString();\n'
+            '                zoom.style.height = event["srcElement"]["naturalHeight"].toString();\n'
+            '                zoom.style.background = "url(\\"" + event["srcElement"]["currentSrc"] + "\\")";\n'
+            '            }\n'
+            '            \n'
+            '            function zoom_out() {\n'
+            '                document.getElementById("zoom").style.display = "none";\n'
+            '            }\n'
+            '            \n'
+            '            function create_table(search) {\n'
+            '                let tbody = document.querySelector("tbody");\n'
+            '                tbody.innerHTML = "";\n'
+            '                for (let item in data) {\n'
+            '                    if (typeof search != "undefined" && search !== "") {\n'
+            '                        let text = "";\n'
+            '                        let i = 1;\n'
+            '                        for (let param in data[item]) {\n'
+            '                            if (i !== 1) {\n'
+            '                                text += data[item][param]\n'
+            '                            }\n'
+            '                            i++;\n'
+            '                        }\n'
+            '                        if (!(text.toLowerCase().includes(search.toLowerCase()))) {\n'
+            '                            continue;\n'
+            '                        }\n'
+            '                    }\n'
+            '                    let tr = document.createElement("tr");\n'
+            '                    let td = document.createElement("td");\n'
+            '                    td.textContent = item;\n'
+            '                    tr.appendChild(td);\n'
+            '                    let i = 1;\n'
+            '                    for (let param in data[item]) {\n'
+            '                        let td = document.createElement("td");\n'
+            '                        if (i === 1) {\n'
+            '                            let img = document.createElement("img");\n'
+            '                            img.setAttribute("src", "data:image/png;base64, " + data[item][param]);\n'
+            '                            img.setAttribute("onmousemove", "zoom_in(event)");\n'
+            '                            img.setAttribute("onmouseout", "zoom_out()");\n'
+            '                            td.appendChild(img);\n'
+            '                        } else if (i === 2) {\n'
+            '                            let a = document.createElement("a");\n'
+            '                            a.setAttribute("href", data[item][param]);\n'
+            '                            a.textContent = data[item][param];\n'
+            '                            td.appendChild(a);\n'
+            '                        } else {\n'
+            '                            td.textContent = data[item][param];\n'
+            '                           let copy = "navigator.clipboard.writeText(\\"" + data[item][param] + "\\")";'
+            '                            td.setAttribute("onclick", copy);\n'
+            '                        }\n'
+            '                        tr.appendChild(td);\n'
+            '                        i++;\n'
+            '                    }\n'
+            '                    tbody.appendChild(tr);\n'
+            '                }\n'
+            '            }\n'
+            '        </script>\n'
+            '    </head>\n'
+            '    <body>\n'
+            '        <div id="background"></div>\n'
+            '        <div id="zoom"></div>\n'
+            '        <div id="content">\n'
+            '            <table>\n'
+            '                <thead>\n'
+            '                    <tr>\n'
+            '                        <th colspan="5">\n'
+            '                            <label>\n'
+            '                                <input type="text" placeholder="Поиск" onkeyup="create_table(this.value)"/>\n'
+            '                            </label>\n'
+            '                        </th>\n'
+            '                    </tr>\n'
+            '                    <tr>\n'
+            '                        <th>Номер</th>\n'
+            '                        <th>Изображение</th>\n'
+            '                        <th>Страница</th>\n'
+            '                        <th>Описание</th>\n'
+            '                        <th>Размер страницы</th>\n'
+            '                    </tr>\n'
+            '                </thead>\n'
+            '                <tbody>\n'
+            '                    <script>\n'
+            '                        create_table();\n'
+            '                    </script>\n'
+            '                </tbody>\n'
+            '            </table>\n'
+            '        </div>\n'
+            '    </body>\n'
+            '</html>\n')
+
+SETTINGS = {"Consumable": False,
+            "Decore": False,
+            "DestroyedHouse": False,
+            "EquestriaGirls": False,
+            "ExpansionZone": False,
+            "Inn": False,
+            "MasterExpansionZone": False,
+            "PartySceneDecore": False,
+            "Path": False,
+            "Pony": False,
+            "Pony_House": False,
+            "PonyPart": False,
+            "PonySet": False,
+            "ProfileAvatar": False,
+            "ProfileAvatarFrame": False,
+            "ProgressBooster": False,
+            "QuestSpecialItem": False,
+            "TapableContainer": False,
+            "Theme": False,
+            "Totem": False,
+            "TravelersCafe": False}
+
+CATEGORIES = {"Consumable": [["Name", "Unlocal"], ["Graphic", "Sprite"], FAKE_ALL],
+              "Decore": [["Name", "Unlocal"], ["Shop", "Icon"], FAKE_DECORE],
+              "DestroyedHouse": [["Name", "Unlocal"], ["Icon", "QuestIcon"], FAKE_HOUSE],
+              "EquestriaGirls": [["Name", "Unlocal"], ["Icons", "Icons_Avatar"], FAKE_ALL],
+              "ExpansionZone": [["ExpansionPopup", "Description"], ["ExpansionPopup", "Image"], FAKE_ALL],
+              "Inn": [["Name", "Unlocal"], ["Icon", "BookIcon"], FAKE_ALL],
+              "MasterExpansionZone": [["Unlock", "UnavailableText"], ["Unlock", "UnavailableImage"], FAKE_ALL],
+              "PartySceneDecore": [["Name", "Unlocal"], ["Shop", "Icon"], FAKE_DECORE],
+              "Path": [["Name", "Unlocal"], ["Shop", "Icon"], FAKE_ALL],
+              "Pony": [["Name", "Unlocal"], ["Shop", "Icon"], FAKE_PONY],
+              "Pony_House": [["Name", "Unlocal"], ["Shop", "Icon"], FAKE_HOUSE],
+              "PonyPart": [["PonyPart", "ModelName"], ["PonyPart", "Icon"], FAKE_ALL],
+              "PonySet": [["PonySet", "Localization"], ["PonySet", "Icon"], FAKE_ALL],
+              "ProfileAvatar": [["Shop", "Label"], ["Settings", "PictureActive"], FAKE_ALL],
+              "ProfileAvatarFrame": [["Shop", "Label"], ["Shop", "Icon"], FAKE_ALL],
+              "ProgressBooster": [["Shop", "Label"], ["Shop", "Icon"], FAKE_ALL],
+              "QuestSpecialItem": [["QuestSpecialItem", "Name"], ["QuestSpecialItem", "Icon"], FAKE_ALL],
+              "TapableContainer": [["UI", "TaskName"], ["UI", "Icon"], FAKE_ALL],
+              "Theme": [["Appearance", "Name"], ["Appearance", "Image"], FAKE_ALL],
+              "Totem": [["Name", "Unlocal"], ["Production", "ShopIcon"], FAKE_ALL],
+              "TravelersCafe": [["Name", "Unlocal"], ["Shop", "Icon"], FAKE_HOUSE]}
+
+DESCRIPTION = {"Consumable": "Расходный материал",
+               "Decore": "Декор",
+               "DestroyedHouse": "Разрушенные дома",
+               "EquestriaGirls": "Девочки из Эквестрии",
+               "ExpansionZone": "",
+               "Inn": "",
+               "MasterExpansionZone": "",
+               "PartySceneDecore": "Праздничная сцена",
+               "Path": "Дорожки",
+               "Pony": "Персонажи",
+               "Pony_House": "Магазины и дома",
+               "PonyPart": "Костюмы",
+               "PonySet": "Наборы костюмов",
+               "ProfileAvatar": "Аватары",
+               "ProfileAvatarFrame": "Рамки аватаров",
+               "ProgressBooster": "Бустеры",
+               "QuestSpecialItem": "Предметы квестов",
+               "TapableContainer": "",
+               "Theme": "Темы",
+               "Totem": "Тотемы",
+               "TravelersCafe": "Отель \"Золотая подкова\""}
+
+FOLDERS = [["000_and_mlpextra_common"],
+           ["000_and_mlpextra_pvr_common", "000_and_mlpextra_astc_pvr_common"],
+           ["000_and_mlpextra_veryhigh", "000_and_mlpextra_astc_veryhigh"],
+           ["000_and_mlpextra2_pvr_common", "000_and_mlpextra2_astc_pvr_common"],
+           ["000_and_mlpextra2_veryhigh", "000_and_mlpextra2_astc_veryhigh"],
+           ["000_and_mlpextragui_veryhigh/gui", "000_and_mlpextragui_astc_veryhigh/gui"],
+           ["000_and_startup_common"],
+           ["001_and_mlpdata_veryhigh", "001_and_mlpdata_astc_veryhigh"]]
+
 
 def create_file_settings(data=None):
     try:
-        print("0: Создание файла TABLEcreator.json.")
+        print("0: Создание файла TABLEcreator.json.\n")
         with open(file="TABLEcreator.json",
                   mode="w") as settings_json:
             dump(obj=data or SETTINGS,
@@ -996,52 +1229,83 @@ def create_file_settings(data=None):
                  indent=4)
         return data or SETTINGS
     except Exception:
-        print("Во время создания файла настроек TABLEcreator.json возникла ошибка. "
-              "Возможно нет прав на создания файлов.")
+        print("[ERROR] Во время создания файла настроек TABLEcreator.json возникла ошибка. "
+              "Возможно нет прав на создания файлов.\n")
+        return data or SETTINGS
 
 
-def create_file_html(data, cat):
+def create_file_html(data):
     try:
-        splash = ""
+        splash, trigger, index_html, i = "", True, {}, 1
         try:
             with open(file="000_and_startup_common/mlp_splash.png",
                       mode="rb") as mlp_splash_png:
                 splash = b64encode(s=mlp_splash_png.read()).decode(encoding="UTF-8",
                                                                    errors="ignore")
         except Exception:
-            print("Во время обработки файла 000_and_startup_common/mlp_splash.png возникла ошибка. "
-                  "Возможно данные в файле повреждены или нет прав на чтение файлов.")
+            print("[ERROR] Во время обработки файла 000_and_startup_common/mlp_splash.png возникла ошибка. "
+                  "Возможно данные в файле повреждены или нет прав на чтение файлов.\n")
+            trigger = False
         if not exists(path="HTML"):
-            print(f"6: Создание папки HTML.")
+            print(f"6: Создание папки HTML.\n")
             try:
                 makedirs(name="HTML")
             except Exception:
-                print(f"Во время создания папки HTML возникла ошибка. "
-                      f"Возможно нет прав на создания папок.")
-        print(f"6: Создание файла HTML/{cat}.html.")
-        with open(file=f"HTML/{cat}.html",
-                  mode="w",
-                  encoding="UTF-8") as output_html:
-            output_html.write(HTML % (dumps(obj=data,
-                                            indent=4,
-                                            ensure_ascii=False), cat, cat, splash))
+                print(f"[ERROR] Во время создания папки HTML возникла ошибка. "
+                      f"Возможно нет прав на создания папок.\n")
+                trigger = False
+        for cat in data:
+            print(f"6: Создание файла HTML/{cat}.html.\n")
+            try:
+                html = HTML % (dumps(obj=data[cat],
+                                     indent=4,
+                                     ensure_ascii=False), cat, cat, splash, "%")
+                with open(file=f"HTML/{cat}.html",
+                          mode="w",
+                          encoding="UTF-8") as output_html:
+                    output_html.write(html)
+                index_html.update({i: {"img": data[cat][1]["img"],
+                                       "page": f"{cat}.html",
+                                       "desc": DESCRIPTION[cat],
+                                       "size": f"{str(len(html) / 1024 / 1024)[:4]} МБ"}})
+                i += 1
+            except Exception:
+                print(f"[WARNING] Во время создания файла HTML/{cat}.html возникла ошибка. "
+                      f"Возможно нет прав на создания файлов. "
+                      f"Файл пропущен.\n")
+                trigger = False
+        try:
+            print("7: Создание файла HTML/index.html.\n")
+            with open(file="HTML/index.html",
+                      mode="w",
+                      encoding="UTF-8") as output_index_html:
+                output_index_html.write(INDEX % (dumps(obj=index_html,
+                                                       indent=4,
+                                                       ensure_ascii=False), splash, "%"))
+        except Exception:
+            print("[WARNING] Во время создания файла HTML/index.html возникла ошибка. "
+                  "Возможно нет прав на создания файлов. "
+                  "Файл пропущен.\n")
+            trigger = False
+        return trigger
     except Exception:
-        print(f"Во время создания файла HTML/{cat}.html возникла ошибка. "
-              f"Возможно нет прав на создания файлов.")
+        print(f"[ERROR] Во время создания HTML файлов возникла ошибка. "
+              f"Возможно нет прав на создания файлов.\n")
+        return False
 
 
 def load_file_settings():
     try:
         if exists(path="TABLEcreator.json"):
-            print("1: Обработка файла TABLEcreator.json.")
+            print("1: Обработка файла TABLEcreator.json.\n")
             with open(file="TABLEcreator.json",
                       mode="r",
                       encoding="UTF-8") as settings_json:
                 try:
                     data = loads(s=settings_json.read())
                     if len(data) < len(SETTINGS):
-                        print("В файле настроек TABLEcreator.json отсутствуют некоторые параметры. "
-                              "Эти параметры будут добавлены в файл со стандартными значениями.")
+                        print("[INFO] В файле настроек TABLEcreator.json отсутствуют некоторые параметры. "
+                              "Эти параметры будут добавлены в файл со стандартными значениями.\n")
                         for item in SETTINGS:
                             if item not in data:
                                 data.update({item: SETTINGS[item]})
@@ -1049,25 +1313,25 @@ def load_file_settings():
                     else:
                         return data
                 except Exception:
-                    print("Не удалось прочитать файл настроек TABLEcreator.json. "
+                    print("[INFO] Не удалось прочитать файл настроек TABLEcreator.json. "
                           "Возможно данные в файле повреждены. "
-                          "Будет создан новый файл со стандартными настройками.")
+                          "Будет создан новый файл со стандартными настройками.\n")
                     return create_file_settings()
         else:
-            print("Файл настроек TABLEcreator.json не обнаружен. "
-                  "Будет создан новый файл со стандартными настройками.")
+            print("[INFO] Файл настроек TABLEcreator.json не обнаружен. "
+                  "Будет создан новый файл со стандартными настройками.\n")
             return create_file_settings()
     except Exception:
-        print("Во время обработки файла настроек TABLEcreator.json возникла ошибка. "
-              "Возможно данные в файле повреждены или нет прав на чтение файлов.")
-        raise Exception
+        print("[ERROR] Во время обработки файла настроек TABLEcreator.json возникла ошибка. "
+              "Возможно данные в файле повреждены или нет прав на чтение файлов.\n")
+        return SETTINGS
 
 
 def load_russian_strings():
     try:
+        russian_list = {}
         if exists(path="000_and_startup_common/russian.txt"):
-            print("2: Обработка файла 000_and_startup_common/russian.txt.")
-            russian_list = {}
+            print("2: Обработка файла 000_and_startup_common/russian.txt.\n")
             with open(file="000_and_startup_common/russian.txt",
                       mode="r",
                       encoding="UTF-8") as russian_file:
@@ -1075,21 +1339,23 @@ def load_russian_strings():
                     data = line.split("=")
                     if len(data) == 2 and data[0] != "":
                         russian_list.update({data[0].strip(): data[1].strip()})
-            return russian_list
+                return russian_list
         else:
-            print("Отсутствует папка 000_and_startup_common или в ней нет файла russian.txt. "
-                  "Разархивируйте архив 000_and_startup_common.ark используя программу ARKdumper.")
+            print("[ERROR] Отсутствует папка 000_and_startup_common или в ней нет файла russian.txt. "
+                  "Разархивируйте архив 000_and_startup_common.ark используя программу ARKdumper. "
+                  "В настройках программы ARKdumper обязательно установите Convert = 1.\n")
+            return None
     except Exception:
-        print("Во время обработки файла 000_and_startup_common/russian.txt возникла ошибка. "
-              "Возможно данные в файле повреждены или нет прав на чтение файлов.")
-        raise Exception
+        print("[ERROR] Во время обработки файла 000_and_startup_common/russian.txt возникла ошибка. "
+              "Возможно данные в файле повреждены или нет прав на чтение файлов.\n")
+        return None
 
 
 def load_english_strings():
     try:
+        english_list = {}
         if exists(path="000_and_startup_common/english.txt"):
-            print("3: Обработка файла 000_and_startup_common/english.txt.")
-            english_list = {}
+            print("3: Обработка файла 000_and_startup_common/english.txt.\n")
             with open(file="000_and_startup_common/english.txt",
                       mode="r",
                       encoding="UTF-8") as english_file:
@@ -1097,100 +1363,155 @@ def load_english_strings():
                     data = line.split("=")
                     if len(data) == 2 and data[0] != "":
                         english_list.update({data[0].strip(): data[1].strip()})
-            return english_list
+                return english_list
         else:
-            print("Отсутствует папка 000_and_startup_common или в ней нет файла english.txt. "
-                  "Разархивируйте архив 000_and_startup_common.ark используя программу ARKdumper.")
+            print("[ERROR] Отсутствует папка 000_and_startup_common или в ней нет файла english.txt. "
+                  "Разархивируйте архив 000_and_startup_common.ark используя программу ARKdumper. "
+                  "В настройках программы ARKdumper обязательно установите Convert = 1.\n")
+            return None
     except Exception:
-        print("Во время обработки файла 000_and_startup_common/english.txt возникла ошибка. "
-              "Возможно данные в файле повреждены или нет прав на чтение файлов..")
-        raise Exception
+        print("[ERROR] Во время обработки файла 000_and_startup_common/english.txt возникла ошибка. "
+              "Возможно данные в файле повреждены или нет прав на чтение файлов.\n")
+        return None
 
 
-def load_image_folder():
+def load_image_folders():
     try:
-        if exists(path="000_and_mlpextragui_astc_veryhigh\\gui"):
-            print("4: Обработка папки 000_and_mlpextragui_astc_veryhigh\\gui.")
-            image_list = {}
-            for root, dirs, files in walk(top="000_and_mlpextragui_astc_veryhigh\\gui"):
-                for file in files:
-                    image_list.update({f"gui/{file}": join(root, file)})
+        image_list, trigger = {}, True
+        for folder in FOLDERS:
+            if exists(path=folder[0]):
+                print(f"4: Обработка папки {folder[0]}.\n")
+                try:
+                    for root, dirs, files in walk(top=folder[0]):
+                        for file in files:
+                            if file.endswith(".png"):
+                                folder = root.replace("\\", "/")
+                                image_list.update({file: f"{folder}/{file}"})
+                except Exception:
+                    print(f"[ERROR] Во время обработки файлов в папке {folder[0]} возникла ошибка. "
+                          f"Возможно файлы в папке повреждены или нет прав на чтение файлов.\n")
+                    trigger = False
+            elif len(folder) == 2 and exists(path=folder[1]):
+                print(f"4: Обработка папки {folder[1]}.\n")
+                try:
+                    for root, dirs, files in walk(top=folder[1]):
+                        for file in files:
+                            if file.endswith(".png"):
+                                folder = root.replace("\\", "/")
+                                image_list.update({file: f"{folder}/{file}"})
+                except Exception:
+                    print(f"[ERROR] Во время обработки файлов в папке {folder[1]} возникла ошибка. "
+                          f"Возможно файлы в папке повреждены или нет прав на чтение файлов.\n")
+                    trigger = False
+            else:
+                if len(folder) == 1:
+                    print(f"[ERROR] Отсутствует папка {folder[0]} или в ней нет файлов. "
+                          f"Разархивируйте архив {folder[0]}.ark используя программу ARKdumper. "
+                          f"В настройках программы ARKdumper обязательно установите Convert = 1 и Split = 1.\n")
+                else:
+                    print(f"[ERROR] Отсутствуют папки {folder[0]} и {folder[1]} или в них нет файлов. "
+                          f"Для работы программы нужна хотябы одна их них. "
+                          f"Разархивируйте архив {folder[0]}.ark или {folder[1]}.ark используя программу ARKdumper. "
+                          f"В настройках программы ARKdumper обязательно установите Convert = 1 и Split = 1.\n")
+                trigger = False
+        if trigger:
             return image_list
         else:
-            print("Отсутствует папка 000_and_mlpextragui_astc_veryhigh или в ней нет папки gui или в той нет файлов. "
-                  "Разархивируйте архив 000_and_mlpextragui_astc_veryhigh.ark используя программу ARKdumper.")
+            return None
     except Exception:
-        print("Во время обработки файлов в папке 000_and_mlpextragui_astc_veryhigh\\gui возникла ошибка. "
-              "Возможно файлы в папке повреждены или нет прав на чтение файлов..")
-        raise Exception
+        folders = ", ".join([", ".join(x) if len(x) == 2 else x[0] for x in FOLDERS])
+        print(f"[ERROR] Во время обработки PNG файлов в папках {folders} возникла ошибка. "
+              f"Возможно файлы в папках повреждены или нет прав на чтение файлов.\n")
+        return None
 
 
 def parse_gameobjectdata(settings, russian, english, images):
     try:
-        if exists(path="000_and_mlpextra_common/gameobjectdata.xml"):
-            if True in settings.values():
-                print("5: Обработка файла 000_and_mlpextra_common/gameobjectdata.xml.")
-                with open(file="000_and_mlpextra_common/gameobjectdata.xml",
-                          mode="r",
-                          encoding="UTF-8") as gameobjectdata_xml:
-                    soup = BeautifulSoup(markup=gameobjectdata_xml.read(),
-                                         features="xml").find_all(name="GameObjects",
-                                                                  limit=1)[0]
-                    for cat in settings:
-                        if settings[cat] and cat in CATEGORIES:
-                            print(f"    Поиск всех {cat}...")
+        all_data, trigger = {}, True
+        if not exists(path="000_and_mlpextra_common/gameobjectdata.xml"):
+            print("[ERROR] Отсутствует папка 000_and_mlpextra_common или в ней нет файла gameobjectdata.xml. "
+                  "Разархивируйте архив 000_and_mlpextra_common.ark используя программу ARKdumper.\n")
+            trigger = False
+        if True not in settings.values():
+            print("[ERROR] В файле настроек TABLEcreator.json не включен ни один параметр. "
+                  "Для работы программы нужно включить хотя бы один.\n")
+            trigger = False
+        if trigger and russian is not None and english is not None and images is not None:
+            print("5: Обработка файла 000_and_mlpextra_common/gameobjectdata.xml.")
+            with open(file="000_and_mlpextra_common/gameobjectdata.xml",
+                      mode="r",
+                      encoding="UTF-8") as gameobjectdata_xml:
+                soup = BeautifulSoup(markup=gameobjectdata_xml.read(),
+                                     features="xml").find_all(name="GameObjects",
+                                                              limit=1)[0]
+                for cat in settings:
+                    if settings[cat] and cat in CATEGORIES:
+                        print(f"    Поиск всех {cat}...")
+                        try:
                             data, i = {}, 1
                             for item in soup.find_all(name="Category",
-                                                      attrs={"ID": CATEGORIES[cat][0]},
+                                                      attrs={"ID": cat},
                                                       limit=1)[0]:
                                 if len(item) > 1:
-                                    res_id, res_rus, res_eng, res_img = "", "", "", FAKE[cat]
+                                    res_id, res_rus, res_eng, res_img = "", "", "", CATEGORIES[cat][2]
                                     try:
                                         res_id = item["ID"]
                                     except Exception:
                                         pass
                                     try:
-                                        res_rus = russian[item.find_all(name=CATEGORIES[cat][1][0],
-                                                                        limit=1)[0][CATEGORIES[cat][1][1]]]
+                                        res_rus = russian[item.find_all(name=CATEGORIES[cat][0][0],
+                                                                        limit=1)[0][CATEGORIES[cat][0][1]]]
                                     except Exception:
                                         pass
                                     try:
-                                        res_eng = english[item.find_all(name=CATEGORIES[cat][1][0],
-                                                                        limit=1)[0][CATEGORIES[cat][1][1]]]
+                                        res_eng = english[item.find_all(name=CATEGORIES[cat][0][0],
+                                                                        limit=1)[0][CATEGORIES[cat][0][1]]]
                                     except Exception:
                                         pass
                                     try:
-                                        with open(file=images[item.find_all(name=CATEGORIES[cat][2][0],
-                                                                            limit=1)[0][CATEGORIES[cat][2][1]]],
+                                        image = item.find_all(name=CATEGORIES[cat][1][0],
+                                                              limit=1)[0][CATEGORIES[cat][1][1]].replace("gui/", "")
+                                        with open(file=images[image],
                                                   mode="rb") as image_file:
                                             res_img = b64encode(s=image_file.read()).decode(encoding="UTF-8",
                                                                                             errors="ignore")
                                     except Exception:
                                         pass
-                                    data.update({i: {"img": res_img, "rus": res_rus, "eng": res_eng, "id": res_id}})
-                                    i += 1
-                            create_file_html(data=data,
-                                             cat=cat)
-            else:
-                print("В файле настроек TABLEcreator.json не включен ни один параметр. "
-                      "Для работы программы нужно включить хотя бы один.")
-                input()
-                exit()
+                                    if res_rus != "" or res_eng != "" or res_img != CATEGORIES[cat][2]:
+                                        data.update({i: {"img": res_img,
+                                                         "rus": res_rus,
+                                                         "eng": res_eng,
+                                                         "id": res_id}})
+                                        i += 1
+                            all_data.update({cat: data})
+                        except Exception:
+                            print("")
+                            print(f"[WARNING] Во время обработки категории {cat} возникла ошибка. "
+                                  f"Возможно данные в файле повреждены или нет прав на чтение файлов. "
+                                  f"Категория пропущена.\n")
+                            trigger = False
+                if len(all_data) > 0:
+                    print("")
+                    trigger = create_file_html(data=all_data) if trigger else False
+                return trigger
         else:
-            print("Отсутствует папка 000_and_mlpextra_common или в ней нет файла gameobjectdata.xml. "
-                  "Разархивируйте архив 000_and_mlpextra_common.ark используя программу ARKdumper.")
+            return False
     except Exception:
-        print("Во время обработки файла 000_and_mlpextra_common/gameobjectdata.xml возникла ошибка. "
-              "Возможно данные в файле повреждены или нет прав на чтение файлов.")
-        raise Exception
+        print("")
+        print("[ERROR] Во время обработки файла 000_and_mlpextra_common/gameobjectdata.xml возникла ошибка. "
+              "Возможно данные в файле повреждены или нет прав на чтение файлов.\n")
+        return False
 
 
 if __name__ == "__main__":
     try:
-        parse_gameobjectdata(settings=load_file_settings(),
-                             russian=load_russian_strings(),
-                             english=load_english_strings(),
-                             images=load_image_folder())
+        if parse_gameobjectdata(settings=load_file_settings(),
+                                russian=load_russian_strings(),
+                                english=load_english_strings(),
+                                images=load_image_folders()):
+            exit()
+        else:
+            raise Exception
     except Exception:
         input()
         exit()
