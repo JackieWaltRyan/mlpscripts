@@ -1,6 +1,6 @@
 # mlpscripts
 
-My programs and scripts that were created to modify a mobile game. Only for those who know how to work with them.
+My scripts that were created to modify for My Little Pony mobile game from Gameloft.
 
 ### License
 
